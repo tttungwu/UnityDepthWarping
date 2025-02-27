@@ -1,0 +1,20 @@
+#pragma kernel DepthToWorldSpace
+
+Texture2D<float> _DepthTexture;
+RWTexture2D<float4> _WorldPosTexture;
+float4x4 _InverseViewProjectionMatrix;
+
+[numthreads(16, 16, 1)]
+void DepthToWorldSpace(uint3 id : SV_DispatchThreadID)
+{
+    uint2 pixelCoord = uint2(id.xy);
+    uint width, height;
+    _WorldPosTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height) return;
+
+    float3 screenPos = float3(float2(pixelCoord.xy) / float2(width, height), _DepthTexture[pixelCoord]);
+    float4 ndcPos = float4(screenPos * 2.0f - 1.0f, 1.0f);
+    float4 worldPos = mul(_InverseViewProjectionMatrix, ndcPos);
+    worldPos /= worldPos.w;
+    _WorldPosTexture[pixelCoord] = worldPos;
+}
