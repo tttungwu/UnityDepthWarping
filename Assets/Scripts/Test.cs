@@ -33,8 +33,10 @@ public class Test : MonoBehaviour
             Vector2 pos;
             pos.x = screenVertices[i].x * Screen.width / 2 + Screen.width / 2;
             pos.y = screenVertices[i].y * Screen.height / 2 + Screen.height / 2;
-            float depth = (1.0f / (worldVertices[i].z + 3.42f) - 1.0f / 1000.0f) / (1.0f / 0.3f - 1.0f / 1000.0f);
+            float depth = (1.0f / (worldVertices[i].z + 1.99f) - 1.0f / 1000.0f) / (1.0f / 0.3f - 1.0f / 1000.0f);
             print(pos);
+            print(depth);
+            depth = (-1.0f / (worldVertices[i].z + 1.99f) - 1.0f / (-1000.0f)) / (1.0f / (-0.3f) - 1.0f / (-1000.0f));
             print(depth);
         }
         
