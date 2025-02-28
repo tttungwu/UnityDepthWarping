@@ -6,12 +6,15 @@ using UnityEngine;
 
 namespace CameraRecorder
 {
+    [RequireComponent(typeof(Camera))]
     public class CameraRecorder : MonoBehaviour
     {
         public float recordInterval = 0.1f;
         public bool playbackFromFile = false;
         public float playbackSpeed = 1.0f;
         public bool enableUI = false;
+
+        private Camera _camera;
 
         private float _recordTimer = 0.0f;
         private bool _isRecording = false;
@@ -27,6 +30,11 @@ namespace CameraRecorder
         private DateTime _timeStart;
         private const string SavingDir = "Assets/Prefabs/CameraRoamingPath/";
         public RoamingPathAsset playbackRoamingPathAsset;
+
+        void Start()
+        {
+            _camera = GetComponent<Camera>();
+        }
 
         void Update()
         {
@@ -91,7 +99,6 @@ namespace CameraRecorder
                 Debug.LogError("positions and rotations have different size!");
                 return;
             }
-            Debug.Log(_positions.Count);
             _isRecording = false;
             _isReplaying = true;
             _currentReplayFrameIndex = 0;
