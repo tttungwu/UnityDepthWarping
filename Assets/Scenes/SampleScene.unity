@@ -144,7 +144,7 @@ MonoBehaviour:
   playbackFromFile: 1
   playbackSpeed: 1
   enableUI: 0
-  playbackRoamingPathAsset: {fileID: 11400000, guid: 9942215e045e7dc4eaccd18c3b82e568,
+  playbackRoamingPathAsset: {fileID: 11400000, guid: c9edeb3229038ad4cac5c7bf9ad3d8e4,
     type: 2}
 --- !u!1 &410087039
 GameObject:
@@ -293,6 +293,26 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: 357aaa48b93050c4e901129ba4ec24e8,
         type: 2}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3729310400594075928, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -12,6 +12,7 @@ public class Test : MonoBehaviour
         Mesh mesh = meshRenderer.GetComponent<MeshFilter>().mesh;
         Vector3[] vertices = mesh.vertices;
         Vector4[] worldVertices = new Vector4[vertices.Length];
+        print(vertices.Length);
         for (int i = 0; i < vertices.Length; i++)
         {
             var tempVec = meshRenderer.transform.TransformPoint(vertices[i]);
@@ -19,6 +20,7 @@ public class Test : MonoBehaviour
             worldVertices[i].y = tempVec.y;
             worldVertices[i].z = tempVec.z;
             worldVertices[i].w = 1.0f;
+            print(worldVertices[i]);
         }
         Vector4[] screenVertices = new Vector4[vertices.Length];
         Matrix4x4 viewAndProjectionMatrix = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
@@ -37,7 +39,6 @@ public class Test : MonoBehaviour
             print(pos);
             print(depth);
             depth = (-1.0f / (worldVertices[i].z + 1.99f) - 1.0f / (-1000.0f)) / (1.0f / (-0.3f) - 1.0f / (-1000.0f));
-            print(depth);
         }
         
         // print(Camera.main.projectionMatrix);

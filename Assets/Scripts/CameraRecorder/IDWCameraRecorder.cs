@@ -119,7 +119,7 @@ namespace CameraRecorder
                         tempTexture.ReadPixels(new Rect(0, 0, prevDepthTexture.width, prevDepthTexture.height), 0, 0);
                         tempTexture.Apply();
                         Color[] pixels = tempTexture.GetPixels();
-                        float[] debugDepth = new float[prevDepthTexture.width * prevDepthTexture.height];
+                        Color[] debugDepth = new Color[prevDepthTexture.width * prevDepthTexture.height];
 
                         for (int y = 0; y < prevDepthTexture.height; y++)
                         {
@@ -127,10 +127,20 @@ namespace CameraRecorder
                             {
                                 int index = y * prevDepthTexture.width + x;
                                 float depth = getScreenDepth(pixels[index].r);
-                                debugDepth[index] = depth;
+                                Vector4 ndcPos = new Vector4(2.0f * x / prevDepthTexture.width - 1,
+                                    2.0f * y / prevDepthTexture.height - 1, depth, 1.0f);
+                                Vector4 worldPos = (prevProjectionMatrix * prevViewMatrix).inverse * ndcPos;
+                                worldPos /= worldPos.w;
+                                Vector4 newNDCPos = _camera.projectionMatrix * _camera.worldToCameraMatrix * worldPos;
+                                newNDCPos /= newNDCPos.w;
+                                debugDepth[index].r = (newNDCPos.x * prevDepthTexture.width + prevDepthTexture.width) / 2.0f;
+                                debugDepth[index].g = (newNDCPos.y * prevDepthTexture.height + prevDepthTexture.height) / 2.0f;
+                                debugDepth[index].b = newNDCPos.z;
+                                debugDepth[index].a = newNDCPos.w;
+                                // debugDepth[index] = depth;
                             }
                         }
-                        SaveFloatsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
                         ++fileCount;
                     }
                 }
@@ -258,6 +268,24 @@ namespace CameraRecorder
         }
 
         private void SaveFloatsToFile(float[] ans, string filePath = "Assets/Debug/DepthData.txt")
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine($"RenderTexture Size: {prevDepthTexture.width}x{prevDepthTexture.height}");
+            sb.AppendLine("Depth Values:");
+            for (int y = 0; y < prevDepthTexture.height; y++)
+            {
+                for (int x = 0; x < prevDepthTexture.width; x++)
+                {
+                    int index = y * prevDepthTexture.width + x;
+                    sb.AppendLine($"[{x}, {y}]: {ans[index]}");
+                }
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+            Debug.Log($"Depth data saved to {filePath}");
+        }
+        
+        private void SaveColorsToFile(Color[] ans, string filePath = "Assets/Debug/DepthData.txt")
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             sb.AppendLine($"RenderTexture Size: {prevDepthTexture.width}x{prevDepthTexture.height}");
