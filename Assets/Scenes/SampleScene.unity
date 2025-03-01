@@ -135,11 +135,17 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 124975494}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79251d2ebaa19a2409bbc616c50f29c9, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b085a971c2642f8ae37ad61a19eb0ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  recordInterval: 0.1
+  playbackFromFile: 1
+  playbackSpeed: 1
+  enableUI: 0
+  playbackRoamingPathAsset: {fileID: 11400000, guid: 9942215e045e7dc4eaccd18c3b82e568,
+    type: 2}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -274,7 +280,7 @@ PrefabInstance:
     - target: {fileID: 3227017065132677464, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3227017065132677464, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
@@ -285,7 +291,7 @@ PrefabInstance:
         type: 3}
       propertyPath: playbackRoamingPathAsset
       value: 
-      objectReference: {fileID: 11400000, guid: fc48a3926fc51994daa0e67ace084a20,
+      objectReference: {fileID: 11400000, guid: 357aaa48b93050c4e901129ba4ec24e8,
         type: 2}
     - target: {fileID: 3729310400594075928, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
