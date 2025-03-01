@@ -144,8 +144,11 @@ MonoBehaviour:
   playbackFromFile: 1
   playbackSpeed: 1
   enableUI: 0
-  playbackRoamingPathAsset: {fileID: 11400000, guid: c9edeb3229038ad4cac5c7bf9ad3d8e4,
+  playbackRoamingPathAsset: {fileID: 11400000, guid: 9942215e045e7dc4eaccd18c3b82e568,
     type: 2}
+  motionVectorComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32,
+    type: 3}
+  motionVectorKernel: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0

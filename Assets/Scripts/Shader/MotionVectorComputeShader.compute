@@ -1,0 +1,38 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+Texture2D<float> PrevDepthTexture;
+float4x4 PrevProjectionMatrix;
+float4x4 InversedPrevProjectionViewMatrix;
+float4x4 CurrentProjectionViewMatrix;
+float FarClipPlane, NearClipPlane;
+
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    PrevDepthTexture.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    float depth = -PrevProjectionMatrix[2][2] + PrevProjectionMatrix[2][3] / ((FarClipPlane * NearClipPlane) / (NearClipPlane + PrevDepthTexture[id.xy] * (FarClipPlane - NearClipPlane)));
+    float4 clipSpacePos = float4(
+        (float)id.x / width * 2.0 - 1.0,
+        (float)id.y / height * 2.0 - 1.0,
+        depth,                            
+        1.0                            
+    );
+    
+    float4 worldPos = mul(InversedPrevProjectionViewMatrix, clipSpacePos);
+    worldPos /= worldPos.w;
+    Result[id.xy] = worldPos;
+    float4 currentClipPos = mul(CurrentProjectionViewMatrix, worldPos);
+    currentClipPos /= currentClipPos.w;
+    
+    float2 currentPixel = float2(
+        (currentClipPos.x + 1.0) * 0.5 * width,
+        (currentClipPos.y + 1.0) * 0.5 * height
+    );
+    
+    float2 diff = currentPixel - float2(id.x, id.y);
+    Result[id.xy] = float4(currentPixel, currentClipPos.z, 1);
+}

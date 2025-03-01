@@ -37,9 +37,13 @@ namespace CameraRecorder
         
         private DepthSaveFeature depthSaveFeature;
         private RenderTexture prevDepthTexture;
+        private RenderTexture predictedDepthTexture;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
         private int skipFrameCount = 5;
         private int fileCount = 0;
+        
+        public ComputeShader motionVectorComputeShader;
+        public int motionVectorKernel;
 
         void Start()
         {
@@ -67,6 +71,11 @@ namespace CameraRecorder
             {
                 Debug.LogWarning("Depth save feature not found");
             }
+            predictedDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+            predictedDepthTexture.enableRandomWrite = true;
+            predictedDepthTexture.Create();
+            
+            motionVectorKernel = motionVectorComputeShader.FindKernel("CSMain");
         }
 
         void Update()
@@ -114,34 +123,46 @@ namespace CameraRecorder
                     transform.rotation = Quaternion.Slerp(_rotations[_currentReplayFrameIndex], _rotations[_currentReplayFrameIndex + 1], _lerpFactor);
                     if (skipFrameCount == 0)
                     {
-                        Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
-                        RenderTexture.active = prevDepthTexture;
-                        tempTexture.ReadPixels(new Rect(0, 0, prevDepthTexture.width, prevDepthTexture.height), 0, 0);
-                        tempTexture.Apply();
-                        Color[] pixels = tempTexture.GetPixels();
-                        Color[] debugDepth = new Color[prevDepthTexture.width * prevDepthTexture.height];
-
-                        for (int y = 0; y < prevDepthTexture.height; y++)
-                        {
-                            for (int x = 0; x < prevDepthTexture.width; x++)
-                            {
-                                int index = y * prevDepthTexture.width + x;
-                                float depth = getScreenDepth(pixels[index].r);
-                                Vector4 ndcPos = new Vector4(2.0f * x / prevDepthTexture.width - 1,
-                                    2.0f * y / prevDepthTexture.height - 1, depth, 1.0f);
-                                Vector4 worldPos = (prevProjectionMatrix * prevViewMatrix).inverse * ndcPos;
-                                worldPos /= worldPos.w;
-                                Vector4 newNDCPos = _camera.projectionMatrix * _camera.worldToCameraMatrix * worldPos;
-                                newNDCPos /= newNDCPos.w;
-                                debugDepth[index].r = (newNDCPos.x * prevDepthTexture.width + prevDepthTexture.width) / 2.0f;
-                                debugDepth[index].g = (newNDCPos.y * prevDepthTexture.height + prevDepthTexture.height) / 2.0f;
-                                debugDepth[index].b = newNDCPos.z;
-                                debugDepth[index].a = newNDCPos.w;
-                                // debugDepth[index] = depth;
-                            }
-                        }
-                        SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        motionVectorComputeShader.SetTexture(motionVectorKernel, "Result", predictedDepthTexture);
+                        motionVectorComputeShader.SetTexture(motionVectorKernel, "PrevDepthTexture", prevDepthTexture);
+                        motionVectorComputeShader.SetMatrix("PrevProjectionMatrix", prevProjectionMatrix);
+                        motionVectorComputeShader.SetMatrix("InversedPrevProjectionViewMatrix", (prevProjectionMatrix * prevViewMatrix).inverse);
+                        motionVectorComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                        motionVectorComputeShader.SetFloat("FarClipPlane", _camera.farClipPlane);
+                        motionVectorComputeShader.SetFloat("NearClipPlane", _camera.nearClipPlane);
+                        motionVectorComputeShader.Dispatch(motionVectorKernel, Screen.width / 8, Screen.height / 8, 1);
+                        
+                        SaveRenderTextureToFile(predictedDepthTexture, "Assets/Debug/DepthData" + fileCount + ".txt");
                         ++fileCount;
+
+                        // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
+                        // RenderTexture.active = prevDepthTexture;
+                        // tempTexture.ReadPixels(new Rect(0, 0, prevDepthTexture.width, prevDepthTexture.height), 0, 0);
+                        // tempTexture.Apply();
+                        // Color[] pixels = tempTexture.GetPixels();
+                        // Color[] debugDepth = new Color[prevDepthTexture.width * prevDepthTexture.height];
+                        //
+                        // for (int y = 0; y < prevDepthTexture.height; y++)
+                        // {
+                        //     for (int x = 0; x < prevDepthTexture.width; x++)
+                        //     {
+                        //         int index = y * prevDepthTexture.width + x;
+                        //         float depth = getScreenDepth(pixels[index].r);
+                        //         Vector4 ndcPos = new Vector4(2.0f * x / prevDepthTexture.width - 1,
+                        //             2.0f * y / prevDepthTexture.height - 1, depth, 1.0f);
+                        //         Vector4 worldPos = (prevProjectionMatrix * prevViewMatrix).inverse * ndcPos;
+                        //         worldPos /= worldPos.w;
+                        //         Vector4 newNDCPos = _camera.projectionMatrix * _camera.worldToCameraMatrix * worldPos;
+                        //         newNDCPos /= newNDCPos.w;
+                        //         debugDepth[index].r = (newNDCPos.x * prevDepthTexture.width + prevDepthTexture.width) / 2.0f;
+                        //         debugDepth[index].g = (newNDCPos.y * prevDepthTexture.height + prevDepthTexture.height) / 2.0f;
+                        //         debugDepth[index].b = newNDCPos.z;
+                        //         debugDepth[index].a = newNDCPos.w;
+                        //         // debugDepth[index] = depth;
+                        //     }
+                        // }
+                        // SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
                     }
                 }
             }
@@ -239,7 +260,7 @@ namespace CameraRecorder
                 return;
             }
 
-            Texture2D tempTexture = new Texture2D(texture.width, texture.height, TextureFormat.RFloat, false);
+            Texture2D tempTexture = new Texture2D(texture.width, texture.height, TextureFormat.RGBAFloat, false);
 
             RenderTexture.active = texture;
             tempTexture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
@@ -256,8 +277,7 @@ namespace CameraRecorder
                 for (int x = 0; x < texture.width; x++)
                 {
                     int index = y * texture.width + x;
-                    float depth = pixels[index].r;
-                    sb.AppendLine($"[{x}, {y}]: {depth}");
+                    sb.AppendLine($"[{x}, {y}]: {pixels[index]}");
                 }
             }
 
