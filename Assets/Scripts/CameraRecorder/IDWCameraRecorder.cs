@@ -37,7 +37,7 @@ namespace CameraRecorder
         
         private DepthSaveFeature depthSaveFeature;
         private RenderTexture prevDepthTexture;
-        private Matrix4x4 prevProjectionViewMatrix;
+        private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
         private int skipFrameCount = 5;
         private int fileCount = 0;
 
@@ -107,7 +107,8 @@ namespace CameraRecorder
                         prevDepthTexture = depthSaveFeature.GetDepthTexture();
                         // SaveRenderTextureToFile(prevDepthTexture, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        prevProjectionViewMatrix = _camera.projectionMatrix * _camera.worldToCameraMatrix;
+                        prevViewMatrix = _camera.worldToCameraMatrix;
+                        prevProjectionMatrix = _camera.projectionMatrix;
                     }
                     transform.position = Vector3.Lerp(_positions[_currentReplayFrameIndex], _positions[_currentReplayFrameIndex + 1], _lerpFactor);
                     transform.rotation = Quaternion.Slerp(_rotations[_currentReplayFrameIndex], _rotations[_currentReplayFrameIndex + 1], _lerpFactor);
@@ -129,8 +130,8 @@ namespace CameraRecorder
                                 debugDepth[index] = depth;
                             }
                         }
-                        // SaveFloatsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        // ++fileCount;
+                        SaveFloatsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
                     }
                 }
             }
@@ -216,7 +217,8 @@ namespace CameraRecorder
         private float getScreenDepth(float depth)
         {
             float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
-            return z;
+            float ndcZ = -prevProjectionMatrix[2, 2] + prevProjectionMatrix[2, 3] / z;
+            return ndcZ;
         }
         
         private void SaveRenderTextureToFile(RenderTexture texture, string filePath = "Assets/Debug/DepthData.txt")
