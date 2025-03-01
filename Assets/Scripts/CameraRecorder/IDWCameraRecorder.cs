@@ -18,6 +18,7 @@ namespace CameraRecorder
         public bool enableUI = false;
 
         private Camera _camera;
+        private float _nearClipPlane, _farClipPlane;
 
         private float _recordTimer = 0.0f;
         private bool _isRecording = false;
@@ -44,6 +45,8 @@ namespace CameraRecorder
         {
             _camera = GetComponent<Camera>();
             _camera.depthTextureMode = DepthTextureMode.Depth;
+            _nearClipPlane = _camera.nearClipPlane;
+            _farClipPlane = _camera.farClipPlane;
             var proInfo = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             if (proInfo != null)
@@ -110,7 +113,24 @@ namespace CameraRecorder
                     transform.rotation = Quaternion.Slerp(_rotations[_currentReplayFrameIndex], _rotations[_currentReplayFrameIndex + 1], _lerpFactor);
                     if (skipFrameCount == 0)
                     {
-                        
+                        Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
+                        RenderTexture.active = prevDepthTexture;
+                        tempTexture.ReadPixels(new Rect(0, 0, prevDepthTexture.width, prevDepthTexture.height), 0, 0);
+                        tempTexture.Apply();
+                        Color[] pixels = tempTexture.GetPixels();
+                        float[] debugDepth = new float[prevDepthTexture.width * prevDepthTexture.height];
+
+                        for (int y = 0; y < prevDepthTexture.height; y++)
+                        {
+                            for (int x = 0; x < prevDepthTexture.width; x++)
+                            {
+                                int index = y * prevDepthTexture.width + x;
+                                float depth = getScreenDepth(pixels[index].r);
+                                debugDepth[index] = depth;
+                            }
+                        }
+                        // SaveFloatsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
                     }
                 }
             }
@@ -192,6 +212,12 @@ namespace CameraRecorder
             if (_isRecording) GUI.Box(new Rect(10, 10, 100, 30), "Recording...");
             if (_isReplaying) GUI.Box(new Rect(10, 10, 100, 30), "Replaying...");
         }
+
+        private float getScreenDepth(float depth)
+        {
+            float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
+            return z;
+        }
         
         private void SaveRenderTextureToFile(RenderTexture texture, string filePath = "Assets/Debug/DepthData.txt")
         {
@@ -227,6 +253,24 @@ namespace CameraRecorder
             Debug.Log($"Depth data saved to {filePath}");
 
             Destroy(tempTexture);
+        }
+
+        private void SaveFloatsToFile(float[] ans, string filePath = "Assets/Debug/DepthData.txt")
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine($"RenderTexture Size: {prevDepthTexture.width}x{prevDepthTexture.height}");
+            sb.AppendLine("Depth Values:");
+            for (int y = 0; y < prevDepthTexture.height; y++)
+            {
+                for (int x = 0; x < prevDepthTexture.width; x++)
+                {
+                    int index = y * prevDepthTexture.width + x;
+                    sb.AppendLine($"[{x}, {y}]: {ans[index]}");
+                }
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+            Debug.Log($"Depth data saved to {filePath}");
         }
     }
 }
