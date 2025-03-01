@@ -74,7 +74,7 @@ namespace CameraRecorder
             }
         }
 
-        void StartRecording()
+        private void StartRecording()
         {
             Debug.Log("StartRecording");
             _positions.Clear();
@@ -85,7 +85,7 @@ namespace CameraRecorder
             _timeStart = DateTime.Now;
         }
 
-        void StartReplaying()
+        private void StartReplaying()
         {
             Debug.Log("StartReplaying");
             LoadData();
@@ -105,7 +105,7 @@ namespace CameraRecorder
             _lerpFactor = 0.0f;
         }
 
-        void Stop()
+        private void Stop()
         {
             if (_isRecording) SaveRoamingPathData();
             _isRecording = false;
