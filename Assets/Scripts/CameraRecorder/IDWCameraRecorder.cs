@@ -49,6 +49,8 @@ namespace CameraRecorder
         private int mipmapKernel;
         private int backwardKernel;
 
+        public int maxBoundIter = 3;
+
         private RenderTexture debugTexture;
 
         void Start()
@@ -176,6 +178,7 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetInt("MaxMipmapLevel", level);
                         motionVectorComputeShader.SetInt("Width", Screen.width);
                         motionVectorComputeShader.SetInt("Height", Screen.height);
+                        motionVectorComputeShader.SetInt("MaxBoundIter", maxBoundIter);
                         motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
                         // debug
@@ -188,8 +191,9 @@ namespace CameraRecorder
                         // }
                         // SaveRenderTextureToFile(backwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
+                        
+                        // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
                         SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         ++fileCount;
 

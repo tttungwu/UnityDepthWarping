@@ -18,6 +18,7 @@ RWTexture2D<float> BackwardWarpingDepthTexture;
 Texture2D<float4> MipmapMotionVectorsTexture;
 SamplerState sampler_linear_clamp;
 int MaxMipmapLevel, Width, Height;
+int MaxBoundIter;
 
 const float FLT_MAX = 3.4028235e+38;
 
@@ -77,6 +78,37 @@ float4 GetMipmapDepth(float2 p, int lod)
     return MipmapMotionVectorsTexture.SampleLevel(sampler_linear_clamp, p / float2(Width, Height), MaxMipmapLevel);
 }
 
+bool ValidMotionBound(float4 motion)
+{
+    return motion.x != FLT_MAX && motion.y != FLT_MAX && motion.z != -FLT_MAX && motion.w != -FLT_MAX;
+}
+
+float4 GetLocalMotionBound(float4 b)
+{
+    float4 m = float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+    int LOD = int(min(ceil(max(0.0f, log2(max(b.z - b.x, b.w - b.y)))), MaxMipmapLevel));
+    float2 p[4] = {b.xy, b.xw, b.zy, b.zw};
+    for (int i = 0; i < 4; ++ i)
+    {
+        float4 s = GetMipmapDepth(p[i], LOD);
+        if (!ValidMotionBound(s)) continue;
+        m = float4(min(m.xy, s.xy), max(m.zw, s.zw));
+    }
+    return m;
+}
+
+float4 GetMotionBound(float2 p)
+{
+    float4 b = GetMipmapDepth(float2(0, 0), MaxMipmapLevel);
+    for (int k = 0; k < MaxBoundIter; ++ k)
+    {
+        float4 m = GetLocalMotionBound(float4(p - b.zw, p - b.xy));
+        if (!ValidMotionBound(m)) break;
+        b = m;
+    }
+    return b;
+}
+
 [numthreads(8, 8, 1)]
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
 {
@@ -84,5 +116,5 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
     BackwardWarpingDepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
 
-    DebugTexture[id.xy] = GetMipmapDepth(float2(0, 0), MaxMipmapLevel);
+    DebugTexture[id.xy] = GetMotionBound(float2(id.xy));
 }

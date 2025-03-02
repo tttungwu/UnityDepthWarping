@@ -148,8 +148,7 @@ MonoBehaviour:
     type: 2}
   motionVectorComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32,
     type: 3}
-  motionVectorKernel: 0
-  mipmapKernel: 0
+  maxBoundIter: 3
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
