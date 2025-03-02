@@ -1,7 +1,7 @@
 #pragma kernel CSMain
 #pragma kernel GenerateMipmap
 
-RWTexture2D<float4> Result;
+RWTexture2D<float> ForwardWarpingDepthTexture;
 RWTexture2D<float4> MotionVector;
 Texture2D<float> PrevDepthTexture;
 float4x4 PrevProjectionMatrix;
@@ -30,7 +30,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     float4 worldPos = mul(InversedPrevProjectionViewMatrix, clipSpacePos);
     worldPos /= worldPos.w;
-    Result[id.xy] = worldPos;
+    ForwardWarpingDepthTexture[id.xy] = worldPos;
     float4 currentClipPos = mul(CurrentProjectionViewMatrix, worldPos);
     currentClipPos /= currentClipPos.w;
     
@@ -40,7 +40,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     );
     
     float2 diff = currentPixel - float2(id.x, id.y);
-    Result[id.xy] = float4(currentPixel, currentClipPos.z, 1);
+    ForwardWarpingDepthTexture[id.xy] = currentClipPos.z;
     MotionVector[id.xy] = float4(diff, diff);
 }
 

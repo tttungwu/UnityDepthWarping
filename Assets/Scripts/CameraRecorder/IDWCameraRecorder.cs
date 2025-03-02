@@ -37,7 +37,8 @@ namespace CameraRecorder
         
         private DepthSaveFeature depthSaveFeature;
         private RenderTexture prevDepthTexture;
-        private RenderTexture predictedDepthTexture;
+        private RenderTexture forwardWarpingDepthTexture;
+        private RenderTexture backwardWarpingDepthTexture;
         private RenderTexture motionVectorsTexture;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
         private int skipFrameCount = 200;
@@ -73,9 +74,12 @@ namespace CameraRecorder
             {
                 Debug.LogWarning("Depth save feature not found");
             }
-            predictedDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-            predictedDepthTexture.enableRandomWrite = true;
-            predictedDepthTexture.Create();
+            forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+            forwardWarpingDepthTexture.enableRandomWrite = true;
+            forwardWarpingDepthTexture.Create();
+            backwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+            backwardWarpingDepthTexture.enableRandomWrite = true;
+            backwardWarpingDepthTexture.Create();
             motionVectorsTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             motionVectorsTexture.enableRandomWrite = true;
             motionVectorsTexture.useMipMap = true;
@@ -131,7 +135,7 @@ namespace CameraRecorder
                     transform.rotation = Quaternion.Slerp(_rotations[_currentReplayFrameIndex], _rotations[_currentReplayFrameIndex + 1], _lerpFactor);
                     if (skipFrameCount == 0)
                     {
-                        motionVectorComputeShader.SetTexture(motionVectorKernel, "Result", predictedDepthTexture);
+                        motionVectorComputeShader.SetTexture(motionVectorKernel, "ForwardWarpingDepthTexture", forwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "MotionVector", motionVectorsTexture);
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "PrevDepthTexture", prevDepthTexture);
                         motionVectorComputeShader.SetMatrix("PrevProjectionMatrix", prevProjectionMatrix);
@@ -154,16 +158,16 @@ namespace CameraRecorder
                             motionVectorComputeShader.Dispatch(mipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
                             currentWidth = nextWidth;
                             currentHeight = nextHeight;
-                            level++;
+                            ++ level;
                         }
                         
-                        SaveRenderTextureToFile(predictedDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
-                        for (int i = 0; i <= level; ++i)
-                        {
-                            SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-                            ++fileCount;
-                        }
+                        // SaveRenderTextureToFile(forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
+                        // for (int i = 0; i <= level; ++i)
+                        // {
+                        //     SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        //     ++fileCount;
+                        // }
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;
