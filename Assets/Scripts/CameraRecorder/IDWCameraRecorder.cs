@@ -165,6 +165,8 @@ namespace CameraRecorder
                         }
                         // backward search
                         motionVectorComputeShader.SetTexture(backwardKernel, "BackwardWarpingDepthTexture", backwardWarpingDepthTexture);
+                        motionVectorComputeShader.SetTexture(backwardKernel, "MipmapmotionVectorsTexture", motionVectorsTexture);
+                        motionVectorComputeShader.SetInt("MaxMipmapLevel", level);
                         motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
                         // debug
