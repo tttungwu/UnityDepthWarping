@@ -38,12 +38,14 @@ namespace CameraRecorder
         private DepthSaveFeature depthSaveFeature;
         private RenderTexture prevDepthTexture;
         private RenderTexture predictedDepthTexture;
+        private RenderTexture motionVectorsTexture;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
-        private int skipFrameCount = 5;
+        private int skipFrameCount = 200;
         private int fileCount = 0;
         
         public ComputeShader motionVectorComputeShader;
         public int motionVectorKernel;
+        public int mipmapKernel;
 
         void Start()
         {
@@ -74,8 +76,14 @@ namespace CameraRecorder
             predictedDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             predictedDepthTexture.enableRandomWrite = true;
             predictedDepthTexture.Create();
+            motionVectorsTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+            motionVectorsTexture.enableRandomWrite = true;
+            motionVectorsTexture.useMipMap = true;
+            motionVectorsTexture.autoGenerateMips = false;
+            motionVectorsTexture.Create();
             
             motionVectorKernel = motionVectorComputeShader.FindKernel("CSMain");
+            mipmapKernel = motionVectorComputeShader.FindKernel("GenerateMipmap");
         }
 
         void Update()
@@ -124,16 +132,38 @@ namespace CameraRecorder
                     if (skipFrameCount == 0)
                     {
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "Result", predictedDepthTexture);
+                        motionVectorComputeShader.SetTexture(motionVectorKernel, "MotionVector", motionVectorsTexture);
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "PrevDepthTexture", prevDepthTexture);
                         motionVectorComputeShader.SetMatrix("PrevProjectionMatrix", prevProjectionMatrix);
                         motionVectorComputeShader.SetMatrix("InversedPrevProjectionViewMatrix", (prevProjectionMatrix * prevViewMatrix).inverse);
                         motionVectorComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
                         motionVectorComputeShader.SetFloat("FarClipPlane", _camera.farClipPlane);
                         motionVectorComputeShader.SetFloat("NearClipPlane", _camera.nearClipPlane);
-                        motionVectorComputeShader.Dispatch(motionVectorKernel, Screen.width / 8, Screen.height / 8, 1);
+                        motionVectorComputeShader.Dispatch(motionVectorKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
-                        SaveRenderTextureToFile(predictedDepthTexture, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        motionVectorComputeShader.SetTexture(mipmapKernel, "MotionTextureSrc", motionVectorsTexture);
+                        int currentWidth = Screen.width;
+                        int currentHeight = Screen.height;
+                        int level = 0;
+                        while (currentWidth > 1 || currentHeight > 1)
+                        {
+                            int nextWidth = Mathf.Max(1, currentWidth / 2);
+                            int nextHeight = Mathf.Max(1, currentHeight / 2);
+                            motionVectorComputeShader.SetInt("SrcLevel", level);
+                            motionVectorComputeShader.SetTexture(mipmapKernel, "MotionTextureDst", motionVectorsTexture, level + 1);
+                            motionVectorComputeShader.Dispatch(mipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
+                            currentWidth = nextWidth;
+                            currentHeight = nextHeight;
+                            level++;
+                        }
+                        
+                        SaveRenderTextureToFile(predictedDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         ++fileCount;
+                        for (int i = 0; i <= level; ++i)
+                        {
+                            SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                            ++fileCount;
+                        }
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;
@@ -164,12 +194,11 @@ namespace CameraRecorder
                         // SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
                     }
+                    else
+                    {
+                        --skipFrameCount;
+                    }
                 }
-            }
-
-            if (skipFrameCount > 0)
-            {
-                --skipFrameCount;
             }
         }
 
@@ -252,39 +281,45 @@ namespace CameraRecorder
             return ndcZ;
         }
         
-        private void SaveRenderTextureToFile(RenderTexture texture, string filePath = "Assets/Debug/DepthData.txt")
+        private void SaveRenderTextureToFile(RenderTexture texture, int mipmapLevel = 0, string filePath = "Assets/Debug/DepthData.txt")
         {
             if (!texture)
             {
                 Debug.LogError("RenderTexture is null!");
                 return;
             }
-
-            Texture2D tempTexture = new Texture2D(texture.width, texture.height, TextureFormat.RGBAFloat, false);
-
-            RenderTexture.active = texture;
-            tempTexture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+            int width = texture.width >> mipmapLevel;
+            int height = texture.height >> mipmapLevel;
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+            RenderTexture tempRT = new RenderTexture(width, height, 0, texture.format);
+            tempRT.enableRandomWrite = true;
+            tempRT.Create();
+            Graphics.CopyTexture(texture, 0, mipmapLevel, tempRT, 0, 0);
+            Texture2D tempTexture = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture.active = tempRT;
+            tempTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             tempTexture.Apply();
-
+            RenderTexture.active = previousActive;
             Color[] pixels = tempTexture.GetPixels();
-
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine($"RenderTexture Size: {texture.width}x{texture.height}");
+            sb.AppendLine($"RenderTexture Size at Mipmap Level {mipmapLevel}: {width}x{height}");
             sb.AppendLine("Depth Values:");
-
-            for (int y = 0; y < texture.height; y++)
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < texture.width; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    int index = y * texture.width + x;
+                    int index = y * width + x;
                     sb.AppendLine($"[{x}, {y}]: {pixels[index]}");
                 }
             }
 
             File.WriteAllText(filePath, sb.ToString());
-            Debug.Log($"Depth data saved to {filePath}");
+            Debug.Log($"Depth data saved to {filePath} for mipmap level {mipmapLevel}");
 
             Destroy(tempTexture);
+            Destroy(tempRT);
         }
 
         private void SaveFloatsToFile(float[] ans, string filePath = "Assets/Debug/DepthData.txt")

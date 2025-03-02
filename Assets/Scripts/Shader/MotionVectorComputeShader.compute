@@ -1,11 +1,17 @@
 #pragma kernel CSMain
+#pragma kernel GenerateMipmap
 
 RWTexture2D<float4> Result;
+RWTexture2D<float4> MotionVector;
 Texture2D<float> PrevDepthTexture;
 float4x4 PrevProjectionMatrix;
 float4x4 InversedPrevProjectionViewMatrix;
 float4x4 CurrentProjectionViewMatrix;
 float FarClipPlane, NearClipPlane;
+
+Texture2D<float4> MotionTextureSrc;
+RWTexture2D<float4> MotionTextureDst;
+int SrcLevel;
 
 [numthreads(8, 8, 1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -35,4 +41,22 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     float2 diff = currentPixel - float2(id.x, id.y);
     Result[id.xy] = float4(currentPixel, currentClipPos.z, 1);
+    MotionVector[id.xy] = float4(diff, diff);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateMipmap(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    MotionTextureDst.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+    int srcX = id.x * 2;
+    int srcY = id.y * 2;
+    float4 val0 = MotionTextureSrc.Load(int3(srcX, srcY, SrcLevel));
+    float4 val1 = MotionTextureSrc.Load(int3(srcX + 1, srcY, SrcLevel));
+    float4 val2 = MotionTextureSrc.Load(int3(srcX, srcY + 1, SrcLevel));
+    float4 val3 = MotionTextureSrc.Load(int3(srcX + 1, srcY + 1, SrcLevel));
+    float2 minXY = min(min(val0.xy, val1.xy), min(val2.xy, val3.xy));
+    float2 maxZW = max(max(val0.zw, val1.zw), max(val2.zw, val3.zw));
+    MotionTextureDst[id.xy] = float4(minXY, maxZW);
 }
