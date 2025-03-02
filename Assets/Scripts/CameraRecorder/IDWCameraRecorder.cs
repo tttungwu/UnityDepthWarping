@@ -45,8 +45,9 @@ namespace CameraRecorder
         private int fileCount = 0;
         
         public ComputeShader motionVectorComputeShader;
-        public int motionVectorKernel;
-        public int mipmapKernel;
+        private int motionVectorKernel;
+        private int mipmapKernel;
+        private int backwardKernel;
 
         void Start()
         {
@@ -88,6 +89,7 @@ namespace CameraRecorder
             
             motionVectorKernel = motionVectorComputeShader.FindKernel("GetMotionVector");
             mipmapKernel = motionVectorComputeShader.FindKernel("GenerateMipmap");
+            backwardKernel = motionVectorComputeShader.FindKernel("BackwardSearch");
         }
 
         void Update()
@@ -135,6 +137,7 @@ namespace CameraRecorder
                     transform.rotation = Quaternion.Slerp(_rotations[_currentReplayFrameIndex], _rotations[_currentReplayFrameIndex + 1], _lerpFactor);
                     if (skipFrameCount == 0)
                     {
+                        // get motion vector and forward depth
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "ForwardWarpingDepthTexture", forwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "MotionVector", motionVectorsTexture);
                         motionVectorComputeShader.SetTexture(motionVectorKernel, "PrevDepthTexture", prevDepthTexture);
@@ -144,7 +147,7 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetFloat("FarClipPlane", _camera.farClipPlane);
                         motionVectorComputeShader.SetFloat("NearClipPlane", _camera.nearClipPlane);
                         motionVectorComputeShader.Dispatch(motionVectorKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        
+                        // get motion vector mipmap
                         int currentWidth = Screen.width;
                         int currentHeight = Screen.height;
                         int level = 0;
@@ -160,7 +163,11 @@ namespace CameraRecorder
                             currentHeight = nextHeight;
                             ++ level;
                         }
+                        // backward search
+                        motionVectorComputeShader.SetTexture(backwardKernel, "BackwardWarpingDepthTexture", backwardWarpingDepthTexture);
+                        motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
+                        // debug
                         SaveRenderTextureToFile(forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         ++fileCount;
                         for (int i = 0; i <= level; ++i)
@@ -168,6 +175,8 @@ namespace CameraRecorder
                             SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
                             ++fileCount;
                         }
+                        SaveRenderTextureToFile(backwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;
