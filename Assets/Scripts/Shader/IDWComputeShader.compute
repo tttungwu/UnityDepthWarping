@@ -15,9 +15,11 @@ RWTexture2D<float4> MotionTextureDst;
 int SrcLevel;
 
 RWTexture2D<float> BackwardWarpingDepthTexture;
-Texture2D<float4> MipmapmotionVectorsTexture;
+Texture2D<float4> MipmapMotionVectorsTexture;
 SamplerState sampler_linear_clamp;
-int MaxMipmapLevel;
+int MaxMipmapLevel, Width, Height;
+
+const float FLT_MAX = 3.4028235e+38;
 
 RWTexture2D<float4> DebugTexture;
 
@@ -69,6 +71,12 @@ void GenerateMipmap(uint3 id : SV_DispatchThreadID)
     MotionTextureDst[id.xy] = float4(minXY, maxZW);
 }
 
+float4 GetMipmapDepth(float2 p, int lod)
+{
+    if (lod < 0 || lod > MaxMipmapLevel) return float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+    return MipmapMotionVectorsTexture.SampleLevel(sampler_linear_clamp, p / float2(Width, Height), MaxMipmapLevel);
+}
+
 [numthreads(8, 8, 1)]
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
 {
@@ -76,7 +84,5 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
     BackwardWarpingDepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
 
-    float2 uv = float2(0, 0);
-    float4 color = MipmapmotionVectorsTexture.SampleLevel(sampler_linear_clamp, uv, MaxMipmapLevel);
-    DebugTexture[id.xy] = color;
+    DebugTexture[id.xy] = GetMipmapDepth(float2(0, 0), MaxMipmapLevel);
 }
