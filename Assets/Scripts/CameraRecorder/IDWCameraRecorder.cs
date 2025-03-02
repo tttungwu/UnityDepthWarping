@@ -86,7 +86,7 @@ namespace CameraRecorder
             motionVectorsTexture.autoGenerateMips = false;
             motionVectorsTexture.Create();
             
-            motionVectorKernel = motionVectorComputeShader.FindKernel("CSMain");
+            motionVectorKernel = motionVectorComputeShader.FindKernel("GetMotionVector");
             mipmapKernel = motionVectorComputeShader.FindKernel("GenerateMipmap");
         }
 
@@ -161,13 +161,13 @@ namespace CameraRecorder
                             ++ level;
                         }
                         
-                        // SaveRenderTextureToFile(forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        // ++fileCount;
-                        // for (int i = 0; i <= level; ++i)
-                        // {
-                        //     SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        //     ++fileCount;
-                        // }
+                        SaveRenderTextureToFile(forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
+                        for (int i = 0; i <= level; ++i)
+                        {
+                            SaveRenderTextureToFile(motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                            ++fileCount;
+                        }
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;

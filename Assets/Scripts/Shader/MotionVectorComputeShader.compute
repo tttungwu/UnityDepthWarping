@@ -1,5 +1,6 @@
-#pragma kernel CSMain
+#pragma kernel GetMotionVector
 #pragma kernel GenerateMipmap
+#pragma kernel BackwardSearch
 
 RWTexture2D<float> ForwardWarpingDepthTexture;
 RWTexture2D<float4> MotionVector;
@@ -13,8 +14,10 @@ RWTexture2D<float4> MotionTextureSrc;
 RWTexture2D<float4> MotionTextureDst;
 int SrcLevel;
 
+RWTexture2D<float> BackwardWarpingDepthTexture;
+
 [numthreads(8, 8, 1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void GetMotionVector(uint3 id : SV_DispatchThreadID)
 {
     uint width, height;
     PrevDepthTexture.GetDimensions(width, height);
@@ -59,4 +62,14 @@ void GenerateMipmap(uint3 id : SV_DispatchThreadID)
     float2 minXY = min(min(val0.xy, val1.xy), min(val2.xy, val3.xy));
     float2 maxZW = max(max(val0.zw, val1.zw), max(val2.zw, val3.zw));
     MotionTextureDst[id.xy] = float4(minXY, maxZW);
+}
+
+[numthreads(8, 8, 1)]
+void BackwardSearch(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    BackwardWarpingDepthTexture.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    BackwardWarpingDepthTexture[id.xy] = 2.0f;
 }
