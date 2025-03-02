@@ -9,7 +9,7 @@ float4x4 InversedPrevProjectionViewMatrix;
 float4x4 CurrentProjectionViewMatrix;
 float FarClipPlane, NearClipPlane;
 
-Texture2D<float4> MotionTextureSrc;
+RWTexture2D<float4> MotionTextureSrc;
 RWTexture2D<float4> MotionTextureDst;
 int SrcLevel;
 
@@ -52,10 +52,10 @@ void GenerateMipmap(uint3 id : SV_DispatchThreadID)
     if (id.x >= width || id.y >= height) return;
     int srcX = id.x * 2;
     int srcY = id.y * 2;
-    float4 val0 = MotionTextureSrc.Load(int3(srcX, srcY, SrcLevel));
-    float4 val1 = MotionTextureSrc.Load(int3(srcX + 1, srcY, SrcLevel));
-    float4 val2 = MotionTextureSrc.Load(int3(srcX, srcY + 1, SrcLevel));
-    float4 val3 = MotionTextureSrc.Load(int3(srcX + 1, srcY + 1, SrcLevel));
+    float4 val0 = MotionTextureSrc[int2(srcX, srcY)];
+    float4 val1 = MotionTextureSrc[int2(srcX + 1, srcY)];
+    float4 val2 = MotionTextureSrc[int2(srcX, srcY + 1)];
+    float4 val3 = MotionTextureSrc[int2(srcX + 1, srcY + 1)];
     float2 minXY = min(min(val0.xy, val1.xy), min(val2.xy, val3.xy));
     float2 maxZW = max(max(val0.zw, val1.zw), max(val2.zw, val3.zw));
     MotionTextureDst[id.xy] = float4(minXY, maxZW);

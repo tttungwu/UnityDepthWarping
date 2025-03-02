@@ -141,7 +141,6 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetFloat("NearClipPlane", _camera.nearClipPlane);
                         motionVectorComputeShader.Dispatch(motionVectorKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
-                        motionVectorComputeShader.SetTexture(mipmapKernel, "MotionTextureSrc", motionVectorsTexture);
                         int currentWidth = Screen.width;
                         int currentHeight = Screen.height;
                         int level = 0;
@@ -150,6 +149,7 @@ namespace CameraRecorder
                             int nextWidth = Mathf.Max(1, currentWidth / 2);
                             int nextHeight = Mathf.Max(1, currentHeight / 2);
                             motionVectorComputeShader.SetInt("SrcLevel", level);
+                            motionVectorComputeShader.SetTexture(mipmapKernel, "MotionTextureSrc", motionVectorsTexture, level);
                             motionVectorComputeShader.SetTexture(mipmapKernel, "MotionTextureDst", motionVectorsTexture, level + 1);
                             motionVectorComputeShader.Dispatch(mipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
                             currentWidth = nextWidth;
