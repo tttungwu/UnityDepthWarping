@@ -195,6 +195,7 @@ namespace CameraRecorder
                             "Assets/Record/Reference/depthData" + referenceCount + ".bin");
                         ++referenceCount;
                         
+                        
                         // debug
                         // SaveRenderTextureToFile(forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
