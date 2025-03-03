@@ -192,7 +192,7 @@ namespace CameraRecorder
                             "Assets/Record/Predict/depthData" + predictCount + ".bin");
                         ++predictCount;
                         SaveRenderTextureToBin(prevDepthTexture,
-                            "Assets/Record/Reference/depthData" + referenceCount + ".bin");
+                            "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
                         ++referenceCount;
                         
                         
@@ -317,7 +317,7 @@ namespace CameraRecorder
             return ndcZ;
         }
 
-        private void SaveRenderTextureToBin(RenderTexture texture, string filePath)
+        private void SaveRenderTextureToBin(RenderTexture texture, string filePath, bool convert = false)
         {
             if (texture == null)
             {
@@ -330,6 +330,13 @@ namespace CameraRecorder
             tempTexture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
             tempTexture.Apply();
             float[] floatData = tempTexture.GetRawTextureData<float>().ToArray();
+            if (convert)
+            {
+                for (int i = 0; i < floatData.Length; i++)
+                {
+                    floatData[i] = GetScreenDepth(floatData[i]);
+                }
+            }
             byte[] bytes = new byte[floatData.Length * sizeof(float)];
             Buffer.BlockCopy(floatData, 0, bytes, 0, bytes.Length);
             try
