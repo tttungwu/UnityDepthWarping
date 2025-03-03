@@ -50,6 +50,7 @@ namespace CameraRecorder
         private int backwardKernel;
 
         public int maxBoundIter = 3;
+        public int seedNum = 8;
 
         private RenderTexture debugTexture;
 
@@ -179,6 +180,7 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetInt("Width", Screen.width);
                         motionVectorComputeShader.SetInt("Height", Screen.height);
                         motionVectorComputeShader.SetInt("MaxBoundIter", maxBoundIter);
+                        motionVectorComputeShader.SetInt("SeedNum", seedNum);
                         motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
                         // debug
@@ -194,8 +196,8 @@ namespace CameraRecorder
                         
                         // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
+                        // SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;

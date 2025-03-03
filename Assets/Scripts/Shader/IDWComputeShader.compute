@@ -18,7 +18,9 @@ RWTexture2D<float> BackwardWarpingDepthTexture;
 Texture2D<float4> MipmapMotionVectorsTexture;
 SamplerState sampler_linear_clamp;
 int MaxMipmapLevel, Width, Height;
+
 int MaxBoundIter;
+int SeedNum;
 
 const float FLT_MAX = 3.4028235e+38;
 
@@ -109,6 +111,21 @@ float4 GetMotionBound(float2 p)
     return b;
 }
 
+float rand(uint seed)
+{
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return float(seed) / 0x7fffffff;
+}
+
+float2 GetSamplePoint(float4 bound, uint id)
+{
+    float rx = rand(id);
+    float ry = rand(id + 1);
+    float x = lerp(bound.x, bound.z, rx);
+    float y = lerp(bound.y, bound.w, ry);
+    return float2(x, y);
+}
+
 [numthreads(8, 8, 1)]
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
 {
@@ -116,5 +133,9 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
     BackwardWarpingDepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
 
-    DebugTexture[id.xy] = GetMotionBound(float2(id.xy));
+    float4 bound = GetMotionBound(float2(id.xy));
+    for (int i = 0; i < SeedNum; ++ i)
+    {
+        
+    }
 }
