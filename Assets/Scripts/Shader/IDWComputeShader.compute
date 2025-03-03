@@ -27,6 +27,7 @@ float Threshold;
 
 const float FLT_MAX = 3.4028235e+38;
 
+// todo
 RWTexture2D<float4> DebugTexture;
 
 [numthreads(8, 8, 1)]
