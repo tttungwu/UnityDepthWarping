@@ -28,13 +28,13 @@ def read_depth_file(file_path):
 
 def depth_to_grayscale(depth_array):
     """将深度数据转换为0-255的灰度图"""
-    # depth_min = depth_array.min()
-    # depth_max = depth_array.max()
-    # if depth_max == depth_min:
-    #     normalized = np.zeros_like(depth_array, dtype=np.uint8)
-    # else:
-    #     normalized = ((depth_array - depth_min) / (depth_max - depth_min) * 255).astype(np.uint8)
-    normalized = (depth_array * 255).astype(np.uint8)
+    depth_min = depth_array.min()
+    depth_max = depth_array.max()
+    if depth_max == depth_min:
+        normalized = np.zeros_like(depth_array, dtype=np.uint8)
+    else:
+        normalized = ((depth_array - depth_min) / (depth_max - depth_min) * 255).astype(np.uint8)
+    # normalized = (depth_array * 255).astype(np.uint8)
     return normalized
 
 def process_folder(folder_path, folder_name):
