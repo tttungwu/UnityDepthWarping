@@ -48,9 +48,11 @@ namespace CameraRecorder
         private int motionVectorKernel;
         private int mipmapKernel;
         private int backwardKernel;
-
-        public int maxBoundIter = 3;
+        
         public int seedNum = 8;
+        public int maxBoundIter = 3;
+        public int maxSearchIter = 3;
+        public float threshold = 0.1f;
 
         private RenderTexture debugTexture;
 
@@ -137,7 +139,7 @@ namespace CameraRecorder
                     if (skipFrameCount == 0)
                     {
                         prevDepthTexture = depthSaveFeature.GetDepthTexture();
-                        // SaveRenderTextureToFile(prevDepthTexture, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // SaveRenderTextureToFile(prevDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
                         prevViewMatrix = _camera.worldToCameraMatrix;
                         prevProjectionMatrix = _camera.projectionMatrix;
@@ -173,7 +175,7 @@ namespace CameraRecorder
                             ++ level;
                         }
                         // backward search
-                        motionVectorComputeShader.SetTexture(backwardKernel, "ForwardWarpingDepthTexture", forwardWarpingDepthTexture);
+                        motionVectorComputeShader.SetTexture(backwardKernel, "MotionVectorAndPredictedDepthTexture", forwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "BackwardWarpingDepthTexture", backwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "MipmapMotionVectorsTexture", motionVectorsTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "DebugTexture", debugTexture);
@@ -182,6 +184,8 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetInt("Height", Screen.height);
                         motionVectorComputeShader.SetInt("MaxBoundIter", maxBoundIter);
                         motionVectorComputeShader.SetInt("SeedNum", seedNum);
+                        motionVectorComputeShader.SetInt("MaxSearchIter", maxSearchIter);
+                        motionVectorComputeShader.SetFloat("Threshold", threshold);
                         motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         
                         // debug
@@ -197,8 +201,8 @@ namespace CameraRecorder
                         
                         // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
+                        // SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;

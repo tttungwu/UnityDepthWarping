@@ -15,12 +15,15 @@ RWTexture2D<float4> MotionTextureDst;
 int SrcLevel;
 
 RWTexture2D<float> BackwardWarpingDepthTexture;
+Texture2D<float4> MotionVectorAndPredictedDepthTexture;
 Texture2D<float4> MipmapMotionVectorsTexture;
 SamplerState sampler_linear_clamp;
 int MaxMipmapLevel, Width, Height;
 
 int MaxBoundIter;
 int SeedNum;
+int MaxSearchIter;
+float Threshold;
 
 const float FLT_MAX = 3.4028235e+38;
 
@@ -126,11 +129,19 @@ float2 GetSamplePoint(float4 bound, uint id)
     return float2(x, y);
 }
 
-// float FixedPointIteration(float2 p, float2 v0)
-// {
-//     float2 q = p - v0;
-//     float3 s = Get
-// }
+float FixedPointIteration(float2 p, float2 v0)
+{
+    float2 q = p - v0;
+    float4 s = MotionVectorAndPredictedDepthTexture.SampleLevel(sampler_linear_clamp, q / float2(Width, Height), 0);
+    for (int k = 0; k < MaxBoundIter && s.z < 1.0f; ++ k)
+    {
+        float2 w = p - s.xy;
+        if (distance(q, w) < Threshold) return s.z;
+        q = w;
+        s = MotionVectorAndPredictedDepthTexture.SampleLevel(sampler_linear_clamp, q / float2(Width, Height), 0);
+    }
+    return 1.0f;
+}
 
 [numthreads(8, 8, 1)]
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
@@ -143,9 +154,9 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
     float predictedDepth = 1.0f;
     for (int i = 0; i < SeedNum; ++ i)
     {
-        // float d = FixedPointIteration(float2(id.xy), GetSamplePoint(bound, i));
-        // if (d < 0) d = 1.0f;
-        // predictedDepth = min(predictedDepth, d);
+        float d = FixedPointIteration(float2(id.xy), GetSamplePoint(bound, i));
+        if (d < 0) d = 1.0f;
+        predictedDepth = min(predictedDepth, d);
     }
-    DebugTexture[id.xy] = ForwardWarpingDepthTexture[id.xy];
+    BackwardWarpingDepthTexture[id.xy] = predictedDepth;
 }
