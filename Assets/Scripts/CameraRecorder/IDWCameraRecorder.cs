@@ -80,7 +80,7 @@ namespace CameraRecorder
             {
                 Debug.LogWarning("Depth save feature not found");
             }
-            forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+            forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             forwardWarpingDepthTexture.enableRandomWrite = true;
             forwardWarpingDepthTexture.Create();
             backwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
@@ -173,6 +173,7 @@ namespace CameraRecorder
                             ++ level;
                         }
                         // backward search
+                        motionVectorComputeShader.SetTexture(backwardKernel, "ForwardWarpingDepthTexture", forwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "BackwardWarpingDepthTexture", backwardWarpingDepthTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "MipmapMotionVectorsTexture", motionVectorsTexture);
                         motionVectorComputeShader.SetTexture(backwardKernel, "DebugTexture", debugTexture);
@@ -196,8 +197,8 @@ namespace CameraRecorder
                         
                         // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        // SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        // ++fileCount;
+                        SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
 
                         // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
                         // RenderTexture.active = prevDepthTexture;

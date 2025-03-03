@@ -2,7 +2,7 @@
 #pragma kernel GenerateMipmap
 #pragma kernel BackwardSearch
 
-RWTexture2D<float> ForwardWarpingDepthTexture;
+RWTexture2D<float4> ForwardWarpingDepthTexture;
 RWTexture2D<float4> MotionVector;
 Texture2D<float> PrevDepthTexture;
 float4x4 PrevProjectionMatrix;
@@ -53,7 +53,7 @@ void GetMotionVector(uint3 id : SV_DispatchThreadID)
     );
     
     float2 diff = currentPixel - float2(id.x, id.y);
-    ForwardWarpingDepthTexture[id.xy] = currentClipPos.z;
+    ForwardWarpingDepthTexture[id.xy] = float4(diff, currentClipPos.z, 0.0);
     MotionVector[id.xy] = float4(diff, diff);
 }
 
@@ -126,6 +126,12 @@ float2 GetSamplePoint(float4 bound, uint id)
     return float2(x, y);
 }
 
+// float FixedPointIteration(float2 p, float2 v0)
+// {
+//     float2 q = p - v0;
+//     float3 s = Get
+// }
+
 [numthreads(8, 8, 1)]
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
 {
@@ -134,8 +140,12 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
     if (id.x >= width || id.y >= height) return;
 
     float4 bound = GetMotionBound(float2(id.xy));
+    float predictedDepth = 1.0f;
     for (int i = 0; i < SeedNum; ++ i)
     {
-        
+        // float d = FixedPointIteration(float2(id.xy), GetSamplePoint(bound, i));
+        // if (d < 0) d = 1.0f;
+        // predictedDepth = min(predictedDepth, d);
     }
+    DebugTexture[id.xy] = ForwardWarpingDepthTexture[id.xy];
 }
