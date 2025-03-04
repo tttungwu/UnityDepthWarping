@@ -188,12 +188,12 @@ namespace CameraRecorder
                         motionVectorComputeShader.SetFloat("Threshold", threshold);
                         motionVectorComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         // evaluate
-                        SaveRenderTextureToBin(backwardWarpingDepthTexture,
-                            "Assets/Record/Predict/depthData" + predictCount + ".bin");
-                        ++predictCount;
-                        SaveRenderTextureToBin(prevDepthTexture,
-                            "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
-                        ++referenceCount;
+                        // SaveRenderTextureToBin(backwardWarpingDepthTexture,
+                        //     "Assets/Record/Predict/depthData" + predictCount + ".bin");
+                        // ++predictCount;
+                        // SaveRenderTextureToBin(prevDepthTexture,
+                        //     "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
+                        // ++referenceCount;
                         
                         
                         // debug
