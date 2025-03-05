@@ -146,8 +146,7 @@ MonoBehaviour:
   enableUI: 0
   playbackRoamingPathAsset: {fileID: 11400000, guid: 082deb31cfb9a584ca8c251dd8692f36,
     type: 2}
-  motionVectorComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32,
-    type: 3}
+  IDWComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32, type: 3}
   seedNum: 8
   maxBoundIter: 3
   maxSearchIter: 3
