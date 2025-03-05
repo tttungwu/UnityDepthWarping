@@ -141,7 +141,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   recordInterval: 0.1
-  playbackFromFile: 0
+  playbackFromFile: 1
   playbackSpeed: 1
   enableUI: 0
   playbackRoamingPathAsset: {fileID: 11400000, guid: 082deb31cfb9a584ca8c251dd8692f36,
@@ -291,7 +291,7 @@ PrefabInstance:
     - target: {fileID: 3227017065132677464, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
       propertyPath: playbackFromFile
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3227017065132677464, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}

@@ -1,5 +1,8 @@
+// #define EVALUATE
+
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -39,6 +42,8 @@ namespace CameraRecorder
         private RenderTexture forwardWarpingDepthTexture;
         private RenderTexture backwardWarpingDepthTexture;
         private RenderTexture motionVectorsTexture;
+        private RenderTexture[] yMapsTextures;
+        private int yMapsSize = Mathf.FloorToInt(Mathf.Log(Mathf.Min(Screen.width, Screen.height), 2.0f)) + 1;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
         private int skipFrameCount = 200;
         
@@ -91,14 +96,19 @@ namespace CameraRecorder
             forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             forwardWarpingDepthTexture.enableRandomWrite = true;
             forwardWarpingDepthTexture.Create();
-            backwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
-            backwardWarpingDepthTexture.enableRandomWrite = true;
-            backwardWarpingDepthTexture.Create();
             motionVectorsTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             motionVectorsTexture.enableRandomWrite = true;
             motionVectorsTexture.useMipMap = true;
             motionVectorsTexture.autoGenerateMips = false;
             motionVectorsTexture.Create();
+            yMapsTextures = new RenderTexture[yMapsSize];
+            for (int i = 0; i < yMapsSize; ++i)
+            {
+                yMapsTextures[i] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+                yMapsTextures[i].enableRandomWrite = true;
+                yMapsTextures[i].Create();
+            }
+            backwardWarpingDepthTexture = yMapsTextures[0];
             
             debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             debugTexture.enableRandomWrite = true;
