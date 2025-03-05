@@ -59,6 +59,7 @@ namespace CameraRecorder
         private int motionVectorKernel;
         private int mipmapKernel;
         private int backwardKernel;
+        private int nBufferKernel;
         
         public int seedNum = 8;
         public int maxBoundIter = 3;
@@ -117,6 +118,7 @@ namespace CameraRecorder
             motionVectorKernel = motionVectorComputeShader.FindKernel("GetMotionVector");
             mipmapKernel = motionVectorComputeShader.FindKernel("GenerateMipmap");
             backwardKernel = motionVectorComputeShader.FindKernel("BackwardSearch");
+            nBufferKernel = motionVectorComputeShader.FindKernel("GenerateNBuffer");
         }
 
         void Update()

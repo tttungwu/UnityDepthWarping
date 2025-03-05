@@ -1,6 +1,7 @@
 #pragma kernel GetMotionVector
 #pragma kernel GenerateMipmap
 #pragma kernel BackwardSearch
+#pragma kernel GenerateNBuffer
 
 RWTexture2D<float4> ForwardWarpingDepthTexture;
 RWTexture2D<float4> MotionVector;
@@ -160,4 +161,10 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
         predictedDepth = min(predictedDepth, d);
     }
     BackwardWarpingDepthTexture[id.xy] = predictedDepth;
+}
+
+[numthreads(8, 8, 1)]
+void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
+{
+    
 }
