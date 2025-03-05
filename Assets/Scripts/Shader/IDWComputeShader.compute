@@ -26,6 +26,10 @@ int SeedNum;
 int MaxSearchIter;
 float Threshold;
 
+Texture2D<float> PrevNBuffer;
+RWTexture2D<float> CurNBuffer;
+int Layer;
+
 const float FLT_MAX = 3.4028235e+38;
 
 // todo
@@ -166,5 +170,10 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
 {
-    
+    uint width, height;
+    CurNBuffer.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    int offset = 1 << (Layer - 1);
+    CurNBuffer[id.xy] = max(max(max(PrevNBuffer[id.xy], PrevNBuffer[int2(id.x, id.y + offset)]), PrevNBuffer[int2(id.x + offset, id.y)]), PrevNBuffer[int2(id.x + offset, id.y + offset)]);
 }
