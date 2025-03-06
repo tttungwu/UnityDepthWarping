@@ -2,7 +2,9 @@
 #pragma kernel GenerateMipmap
 #pragma kernel BackwardSearch
 #pragma kernel GenerateNBuffer
+#pragma kernel ComputeVisibility
 
+// motion vector kernel
 RWTexture2D<float4> ForwardWarpingDepthTexture;
 RWTexture2D<float4> MotionVector;
 Texture2D<float> PrevDepthTexture;
@@ -11,29 +13,42 @@ float4x4 InversedPrevProjectionViewMatrix;
 float4x4 CurrentProjectionViewMatrix;
 float FarClipPlane, NearClipPlane;
 
+// min-max Mipmap kernel
 RWTexture2D<float4> MotionTextureSrc;
 RWTexture2D<float4> MotionTextureDst;
 int SrcLevel;
 
+// backward search kernel
 RWTexture2D<float> BackwardWarpingDepthTexture;
 Texture2D<float4> MotionVectorAndPredictedDepthTexture;
 Texture2D<float4> MipmapMotionVectorsTexture;
 SamplerState sampler_linear_clamp;
 int MaxMipmapLevel, Width, Height;
-
+// hyperparameter in backward search
 int MaxBoundIter;
 int SeedNum;
 int MaxSearchIter;
 float Threshold;
 
+// NBuffer kernel
 Texture2D<float> PrevNBuffer;
 RWTexture2D<float> CurNBuffer;
 int Layer;
 
-const float FLT_MAX = 3.4028235e+38;
+// compute visibility kernel
+struct BoundingBox {
+    float3 bottomLeft;
+    float3 upRight;
+};
+StructuredBuffer<BoundingBox> BoundingBoxes;
+RWStructuredBuffer<int> Visibility;
+int ObjectNum;
 
-// todo
+// Debug
 RWTexture2D<float4> DebugTexture;
+
+// Constant
+const float FLT_MAX = 3.4028235e+38;
 
 [numthreads(8, 8, 1)]
 void GetMotionVector(uint3 id : SV_DispatchThreadID)
@@ -176,4 +191,13 @@ void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
 
     int offset = 1 << (Layer - 1);
     CurNBuffer[id.xy] = max(max(max(PrevNBuffer[id.xy], PrevNBuffer[int2(id.x, id.y + offset)]), PrevNBuffer[int2(id.x + offset, id.y)]), PrevNBuffer[int2(id.x + offset, id.y + offset)]);
+}
+
+[numthreads(64, 1, 1)]
+void ComputeVisibility(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= ObjectNum) return;
+    if (index % 2 == 0) Visibility[index] = 0;
+    else Visibility[index] = 1;
 }

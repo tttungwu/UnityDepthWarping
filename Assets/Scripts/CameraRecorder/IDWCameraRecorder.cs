@@ -1,4 +1,4 @@
-// #define DEBUGPRINT
+#define DEBUGPRINT
 // #define EVALUATE
 
 using System;
@@ -45,6 +45,10 @@ namespace CameraRecorder
         private RenderTexture motionVectorsTexture;
         private RenderTexture[] yMapsTextures;
         private int yMapsSize = Mathf.FloorToInt(Mathf.Log(Mathf.Min(Screen.width, Screen.height), 2.0f)) + 1;
+        private ComputeBuffer boundingBoxesBuffer;
+        private ComputeBuffer visibilityBuffer;
+        private int[] visibilityOutcome;
+        private int objectNum;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
         private int skipFrameCount = 200;
         
@@ -61,6 +65,7 @@ namespace CameraRecorder
         private int mipmapKernel;
         private int backwardKernel;
         private int nBufferKernel;
+        private int computeVisibilityKernel;
         
         public int seedNum = 8;
         public int maxBoundIter = 3;
@@ -111,6 +116,22 @@ namespace CameraRecorder
                 yMapsTextures[i].Create();
             }
             backwardWarpingDepthTexture = yMapsTextures[0];
+
+            Occludee[] occludees = FindObjectsOfType<Occludee>();
+            objectNum = occludees.Length;
+            Vector3[] boundingBoxesData = new Vector3[objectNum * 2];
+            for (int i = 0; i < objectNum; ++ i)
+            {
+                Bounds bounds = occludees[i].GetBounds();
+                boundingBoxesData[i * 2] = bounds.min;
+                boundingBoxesData[i * 2 + 1] = bounds.max;
+            }
+            boundingBoxesBuffer = new ComputeBuffer(objectNum, sizeof(float) * 3 * 2);
+            boundingBoxesBuffer.SetData(boundingBoxesData);
+            visibilityOutcome = new int[objectNum];
+            visibilityBuffer = new ComputeBuffer(objectNum, sizeof(int));
+            visibilityBuffer.SetData(visibilityOutcome);
+            Debug.Log($"bounding box buffer is created for {objectNum}");
             
             debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             debugTexture.enableRandomWrite = true;
@@ -120,6 +141,7 @@ namespace CameraRecorder
             mipmapKernel = IDWComputeShader.FindKernel("GenerateMipmap");
             backwardKernel = IDWComputeShader.FindKernel("BackwardSearch");
             nBufferKernel = IDWComputeShader.FindKernel("GenerateNBuffer");
+            computeVisibilityKernel = IDWComputeShader.FindKernel("ComputeVisibility");
         }
 
         void Update()
@@ -212,6 +234,16 @@ namespace CameraRecorder
                             IDWComputeShader.SetTexture(nBufferKernel, "CurNBuffer", yMapsTextures[layer]);
                             IDWComputeShader.Dispatch(nBufferKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                         }
+                        // cull object
+                        IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
+                        IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
+                        IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                        IDWComputeShader.SetInt("ObjectNum", objectNum);
+                        IDWComputeShader.Dispatch(computeVisibilityKernel, (objectNum + 63) / 64, 1, 1);
+                        visibilityBuffer.GetData(visibilityOutcome);
+                        for (int i = 0; i < visibilityOutcome.Length; i++)
+                            Debug.Log(visibilityOutcome[i]);
+                        Debug.Log("---------------");
 #if EVALUATE
                         // evaluate
                         SaveRenderTextureToBin(yMapsTextures[0],
@@ -255,11 +287,13 @@ namespace CameraRecorder
                         // }
                         // SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        for (int layer = 0; layer < yMapsSize; ++layer)
-                        {
-                            SaveRenderTextureToFile(yMapsTextures[layer], 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                            ++fileCount;
-                        }
+                        // for (int layer = 0; layer < yMapsSize; ++layer)
+                        // {
+                        //     SaveRenderTextureToFile(yMapsTextures[layer], 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        //     ++fileCount;
+                        // }
+                        SaveIntsToFile(visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
 #endif
                     }
                     else
@@ -437,6 +471,17 @@ namespace CameraRecorder
                     sb.AppendLine($"[{x}, {y}]: {ans[index]}");
                 }
             }
+
+            File.WriteAllText(filePath, sb.ToString());
+            Debug.Log($"Depth data saved to {filePath}");
+        }
+        
+        private void SaveIntsToFile(int[] ans, string filePath = "Assets/Debug/DepthData.txt")
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine($"ObjectNum: {ans.Length}");
+            for (int index = 0; index < ans.Length; index ++)
+                sb.AppendLine($"[{index}]: {ans[index]}");
 
             File.WriteAllText(filePath, sb.ToString());
             Debug.Log($"Depth data saved to {filePath}");
