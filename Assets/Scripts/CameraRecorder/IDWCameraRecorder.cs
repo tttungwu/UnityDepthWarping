@@ -369,13 +369,6 @@ namespace CameraRecorder
             _rotations = playbackRoamingPathAsset.poses.Select(it => it.rotation).ToList();
         }
         
-        private void OnGUI()
-        {
-            if (!enableUI) return;
-            if (_isRecording) GUI.Box(new Rect(10, 10, 100, 30), "Recording...");
-            if (_isReplaying) GUI.Box(new Rect(10, 10, 100, 30), "Replaying...");
-        }
-
         private float GetScreenDepth(float depth)
         {
             float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
