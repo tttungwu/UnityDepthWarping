@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -218,20 +218,20 @@ namespace CameraRecorder
                             currentHeight = nextHeight;
                             ++ level;
                         }
-                        // // backward search
-                        // IDWComputeShader.SetTexture(backwardKernel, "MotionVectorAndPredictedDepthTexture", forwardWarpingDepthTexture);
-                        // IDWComputeShader.SetTexture(backwardKernel, "BackwardWarpingDepthTexture", backwardWarpingDepthTexture);
-                        // IDWComputeShader.SetTexture(backwardKernel, "MipmapMotionVectorsTexture", motionVectorsTexture);
-                        // IDWComputeShader.SetTexture(backwardKernel, "DebugTexture", debugTexture);
-                        // IDWComputeShader.SetInt("MaxMipmapLevel", level);
-                        // IDWComputeShader.SetInt("Width", Screen.width);
-                        // IDWComputeShader.SetInt("Height", Screen.height);
-                        // IDWComputeShader.SetInt("MaxBoundIter", maxBoundIter);
-                        // IDWComputeShader.SetInt("SeedNum", seedNum);
-                        // IDWComputeShader.SetInt("MaxSearchIter", maxSearchIter);
-                        // IDWComputeShader.SetFloat("Threshold", threshold);
-                        // IDWComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        //
+                        // backward search
+                        _IDWComputeShader.SetTexture(_backwardKernel, "MotionVectorAndPredictedDepthTexture", _forwardWarpingDepthTexture);
+                        _IDWComputeShader.SetTexture(_backwardKernel, "BackwardWarpingDepthTexture", _backwardWarpingDepthTexture);
+                        _IDWComputeShader.SetTexture(_backwardKernel, "MipmapMotionVectorsTexture", _motionVectorsTexture);
+                        _IDWComputeShader.SetTexture(_backwardKernel, "DebugTexture", debugTexture);
+                        _IDWComputeShader.SetInt("MaxMipmapLevel", level);
+                        _IDWComputeShader.SetInt("Width", Screen.width);
+                        _IDWComputeShader.SetInt("Height", Screen.height);
+                        _IDWComputeShader.SetInt("MaxBoundIter", maxBoundIter);
+                        _IDWComputeShader.SetInt("SeedNum", seedNum);
+                        _IDWComputeShader.SetInt("MaxSearchIter", maxSearchIter);
+                        _IDWComputeShader.SetFloat("Threshold", threshold);
+                        _IDWComputeShader.Dispatch(_backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
+                        
                         
                         
                         
@@ -257,10 +257,10 @@ namespace CameraRecorder
                         // Debug.Log("---------------");
 #if EVALUATE
                         // evaluate
-                        SaveRenderTextureToBin(yMapsTextures[0],
+                        SaveRenderTextureToBin(_backwardWarpingDepthTexture,
                             "Assets/Record/Predict/depthData" + predictCount + ".bin");
                         ++predictCount;
-                        SaveRenderTextureToBin(prevDepthTexture,
+                        SaveRenderTextureToBin(_prevDepthTexture,
                             "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
                         ++referenceCount;
 #endif
