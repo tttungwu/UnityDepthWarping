@@ -1,4 +1,4 @@
-#define DEBUGPRINT
+// #define DEBUGPRINT
 // #define EVALUATE
 
 using System;
@@ -43,14 +43,12 @@ namespace CameraRecorder
         private RenderTexture forwardWarpingDepthTexture;
         private RenderTexture backwardWarpingDepthTexture;
         private RenderTexture motionVectorsTexture;
-        private RenderTexture[] yMapsTextures;
-        private int yMapsSize = Mathf.FloorToInt(Mathf.Log(Mathf.Min(Screen.width, Screen.height), 2.0f)) + 1;
         private ComputeBuffer boundingBoxesBuffer;
         private ComputeBuffer visibilityBuffer;
         private int[] visibilityOutcome;
         private int objectNum;
+        private int _yMapNBufferCount, _yMapNBufferWidth, _yMapNBufferHeight;
         private Matrix4x4 prevProjectionMatrix, prevViewMatrix;
-        private int skipFrameCount = 200;
         
 #if DEBUGPRINT
         private int fileCount = 0;
@@ -67,11 +65,16 @@ namespace CameraRecorder
         private int nBufferKernel;
         private int computeVisibilityKernel;
         
+        // hyperpparameter
+        public int skipFrameCount = 200;
+        [Header("backward search")]
         public int seedNum = 8;
         public int maxBoundIter = 3;
         public int maxSearchIter = 3;
         public float threshold = 0.1f;
-
+        [Header("yMaps")]
+        public int yMapMipmapCount = 3;
+        
         private RenderTexture debugTexture;
 
         void Start()
@@ -103,20 +106,21 @@ namespace CameraRecorder
             forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             forwardWarpingDepthTexture.enableRandomWrite = true;
             forwardWarpingDepthTexture.Create();
+            backwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+            backwardWarpingDepthTexture.enableRandomWrite = true;
+            backwardWarpingDepthTexture.useMipMap = true;
+            backwardWarpingDepthTexture.autoGenerateMips = false;
+            backwardWarpingDepthTexture.Create();
             motionVectorsTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
             motionVectorsTexture.enableRandomWrite = true;
             motionVectorsTexture.useMipMap = true;
             motionVectorsTexture.autoGenerateMips = false;
             motionVectorsTexture.Create();
-            yMapsTextures = new RenderTexture[yMapsSize];
-            for (int i = 0; i < yMapsSize; ++i)
-            {
-                yMapsTextures[i] = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
-                yMapsTextures[i].enableRandomWrite = true;
-                yMapsTextures[i].Create();
-            }
-            backwardWarpingDepthTexture = yMapsTextures[0];
-
+            
+            _yMapNBufferWidth = Mathf.FloorToInt(Screen.width / Mathf.Pow(2, yMapMipmapCount));
+            _yMapNBufferHeight = Mathf.FloorToInt(Screen.height / Mathf.Pow(2, yMapMipmapCount));
+            _yMapNBufferCount = Mathf.FloorToInt(Mathf.Log(Mathf.Max(_yMapNBufferWidth, _yMapNBufferHeight)) / Mathf.Log(2));
+            Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
             Occludee[] occludees = FindObjectsOfType<Occludee>();
             objectNum = occludees.Length;
             Vector3[] boundingBoxesData = new Vector3[objectNum * 2];
@@ -226,24 +230,30 @@ namespace CameraRecorder
                         IDWComputeShader.SetInt("MaxSearchIter", maxSearchIter);
                         IDWComputeShader.SetFloat("Threshold", threshold);
                         IDWComputeShader.Dispatch(backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
+                        
+                        
+                        
+                        
+                        
+                        
                         // generate N-Buffer
-                        for (int layer = 1; layer < yMapsSize; ++layer)
-                        {
-                            IDWComputeShader.SetInt("Layer", layer);
-                            IDWComputeShader.SetTexture(nBufferKernel, "PrevNBuffer", yMapsTextures[layer - 1]);
-                            IDWComputeShader.SetTexture(nBufferKernel, "CurNBuffer", yMapsTextures[layer]);
-                            IDWComputeShader.Dispatch(nBufferKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        }
-                        // cull object
-                        IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
-                        IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
-                        IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
-                        IDWComputeShader.SetInt("ObjectNum", objectNum);
-                        IDWComputeShader.Dispatch(computeVisibilityKernel, (objectNum + 63) / 64, 1, 1);
-                        visibilityBuffer.GetData(visibilityOutcome);
-                        for (int i = 0; i < visibilityOutcome.Length; i++)
-                            Debug.Log(visibilityOutcome[i]);
-                        Debug.Log("---------------");
+                        // for (int layer = 1; layer < yMapsSize; ++layer)
+                        // {
+                        //     IDWComputeShader.SetInt("Layer", layer);
+                        //     IDWComputeShader.SetTexture(nBufferKernel, "PrevNBuffer", yMapsTextures[layer - 1]);
+                        //     IDWComputeShader.SetTexture(nBufferKernel, "CurNBuffer", yMapsTextures[layer]);
+                        //     IDWComputeShader.Dispatch(nBufferKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
+                        // }
+                        // // cull object
+                        // IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
+                        // IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
+                        // IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                        // IDWComputeShader.SetInt("ObjectNum", objectNum);
+                        // IDWComputeShader.Dispatch(computeVisibilityKernel, (objectNum + 63) / 64, 1, 1);
+                        // visibilityBuffer.GetData(visibilityOutcome);
+                        // for (int i = 0; i < visibilityOutcome.Length; i++)
+                        //     Debug.Log(visibilityOutcome[i]);
+                        // Debug.Log("---------------");
 #if EVALUATE
                         // evaluate
                         SaveRenderTextureToBin(yMapsTextures[0],
