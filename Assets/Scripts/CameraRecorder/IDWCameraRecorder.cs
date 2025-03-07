@@ -294,11 +294,11 @@ namespace CameraRecorder
                         // }
                         // SaveIntsToFile(_visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
-                        for (int i = 0; i < yMapMipmapCount; ++i)
-                        {
-                            SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-                            ++fileCount;
-                        }
+                        // for (int i = 0; i < yMapMipmapCount; ++i)
+                        // {
+                        //     SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        //     ++fileCount;
+                        // }
 #endif
 #if EVALUATE
                         // evaluate
