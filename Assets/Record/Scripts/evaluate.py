@@ -1,4 +1,5 @@
 import os
+import subprocess
 import numpy as np
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
@@ -104,30 +105,57 @@ def calculate_metrics(predict_data, reference_data):
     return metrics, ssim_avg, psnr_avg
 
 def create_video(folder_path, output_filename, fps=30):
-    """将文件夹中的PNG图片合成为视频"""
-    img_files = [f for f in os.listdir(folder_path) if f.startswith('depthData') and f.endswith('.png')]
-    img_files.sort()
+    """使用 FFmpeg 将文件夹中的PNG图片合成为视频"""
+    try:
+        # 获取PNG文件列表并排序
+        img_files = [f for f in os.listdir(folder_path) if f.startswith('depthData') and f.endswith('.png')]
+        img_files.sort()
+        
+        if not img_files:
+            print(f"警告: {folder_path} 中没有找到PNG文件")
+            return False
+        
+        # 检查 FFmpeg 是否可用
+        try:
+            subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("错误: FFmpeg 未安装或未找到，请确保 FFmpeg 已安装并添加到系统路径")
+            return False
+        
+        # 构建 FFmpeg 命令
+        video_path = os.path.join(folder_path, output_filename)
+        input_pattern = os.path.join(folder_path, "depthData%d.png")
+        
+        # FFmpeg 命令：
+        # -r: 设置帧率
+        # -i: 输入文件模式，使用 %d 通配符匹配 depthData0.png, depthData1.png 等
+        # -c:v libx264: 使用 H.264 编码
+        # -pix_fmt yuv420p: 设置像素格式以确保广泛兼容性
+        # -y: 强制覆盖输出文件
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-r', str(fps),              # 帧率
+            '-i', input_pattern,         # 输入文件模式
+            '-c:v', 'libx264',           # 视频编码器
+            '-pix_fmt', 'yuv420p',       # 像素格式
+            '-y',                        # 覆盖输出文件
+            video_path                   # 输出文件路径
+        ]
+        
+        # 执行 FFmpeg 命令
+        result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        if result.returncode != 0:
+            print(f"错误: FFmpeg 执行失败")
+            print(f"FFmpeg 输出: {result.stderr}")
+            return False
+        
+        print(f"视频已保存至: {video_path}")
+        return True
     
-    if not img_files:
-        print(f"警告: {folder_path} 中没有找到PNG文件")
-        return
-    
-    first_img_path = os.path.join(folder_path, img_files[0])
-    frame = cv2.imread(first_img_path)
-    height, width, layers = frame.shape
-    
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_path = os.path.join(folder_path, output_filename)
-    video_writer = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
-    
-    for img_file in img_files:
-        img_path = os.path.join(folder_path, img_file)
-        frame = cv2.imread(img_path)
-        video_writer.write(frame)
-        print(f"添加帧: {img_file}")
-    
-    video_writer.release()
-    print(f"视频已保存至: {video_path}")
+    except Exception as e:
+        print(f"创建视频时发生错误: {str(e)}")
+        return False
 
 def main():
     if not os.path.exists(predict_dir):
