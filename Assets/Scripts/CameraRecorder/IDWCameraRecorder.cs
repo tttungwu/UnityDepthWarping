@@ -145,6 +145,7 @@ namespace CameraRecorder
             _motionVectorKernel = _IDWComputeShader.FindKernel("GetMotionVector");
             _minmaxMipmapKernel = _IDWComputeShader.FindKernel("GenerateMinMaxMipmap");
             _backwardKernel = _IDWComputeShader.FindKernel("BackwardSearch");
+            _maxMipmapKernel = _IDWComputeShader.FindKernel("GenerateMaxMipmap");
             _nBufferKernel = _IDWComputeShader.FindKernel("GenerateNBuffer");
             _computeVisibilityKernel = _IDWComputeShader.FindKernel("ComputeVisibility");
         }
@@ -230,10 +231,16 @@ namespace CameraRecorder
                         _IDWComputeShader.SetInt("MaxSearchIter", maxSearchIter);
                         _IDWComputeShader.SetFloat("Threshold", threshold);
                         _IDWComputeShader.Dispatch(_backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        // generate N-Buffer
-                        for (int layer = 0; layer < yMapMipmapCount; ++layer)
+                        // generate yMaps
+                        for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < yMapMipmapCount; ++layer)
                         {
-                            
+                            int nextWidth = Mathf.Max(1, curWidth / 2);
+                            int nextHeight = Mathf.Max(1, curHeight / 2);
+                            _IDWComputeShader.SetTexture(_maxMipmapKernel, "PrevYMapBuffer", _backwardWarpingDepthTexture, layer);
+                            _IDWComputeShader.SetTexture(_maxMipmapKernel, "CurYMapBuffer", _backwardWarpingDepthTexture, layer + 1);
+                            _IDWComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
+                            curWidth = nextWidth;
+                            curHeight = nextHeight;
                         }
                         // // cull object
                         // IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
@@ -245,24 +252,16 @@ namespace CameraRecorder
                         // for (int i = 0; i < visibilityOutcome.Length; i++)
                         //     Debug.Log(visibilityOutcome[i]);
                         // Debug.Log("---------------");
-#if EVALUATE
-                        // evaluate
-                        SaveRenderTextureToBin(_backwardWarpingDepthTexture,
-                            "Assets/Record/Predict/depthData" + predictCount + ".bin");
-                        ++predictCount;
-                        SaveRenderTextureToBin(_prevDepthTexture,
-                            "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
-                        ++referenceCount;
-#endif
+
 #if DEBUGPRINT
-                        // // debug
-                        SaveRenderTextureToFile(_forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
-                        for (int i = 0; i <= level; ++i)
-                        {
-                            SaveRenderTextureToFile(_motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-                            ++fileCount;
-                        }
+                        // debug
+                        // SaveRenderTextureToFile(_forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
+                        // for (int i = 0; i <= level; ++i)
+                        // {
+                        //     SaveRenderTextureToFile(_motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        //     ++fileCount;
+                        // }
                         // SaveRenderTextureToFile(backwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
                         // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
@@ -295,6 +294,20 @@ namespace CameraRecorder
                         // }
                         // SaveIntsToFile(_visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
+                        for (int i = 0; i < yMapMipmapCount; ++i)
+                        {
+                            SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                            ++fileCount;
+                        }
+#endif
+#if EVALUATE
+                        // evaluate
+                        SaveRenderTextureToBin(_backwardWarpingDepthTexture,
+                            "Assets/Record/Predict/depthData" + predictCount + ".bin");
+                        ++predictCount;
+                        SaveRenderTextureToBin(_prevDepthTexture,
+                            "Assets/Record/Reference/depthData" + referenceCount + ".bin", true);
+                        ++referenceCount;
 #endif
                     }
                     else
