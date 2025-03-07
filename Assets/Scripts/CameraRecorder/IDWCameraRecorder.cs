@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-#define EVALUATE
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -210,9 +210,8 @@ namespace CameraRecorder
                         {
                             int nextWidth = Mathf.Max(1, currentWidth / 2);
                             int nextHeight = Mathf.Max(1, currentHeight / 2);
-                            _IDWComputeShader.SetInt("SrcLevel", level);
-                            _IDWComputeShader.SetTexture(_minmaxMipmapKernel, "MotionTextureSrc", _motionVectorsTexture, level);
-                            _IDWComputeShader.SetTexture(_minmaxMipmapKernel, "MotionTextureDst", _motionVectorsTexture, level + 1);
+                            _IDWComputeShader.SetTexture(_minmaxMipmapKernel, "MinmaxMipmapLayerSrc", _motionVectorsTexture, level);
+                            _IDWComputeShader.SetTexture(_minmaxMipmapKernel, "MinmaxMipmapLayerDst", _motionVectorsTexture, level + 1);
                             _IDWComputeShader.Dispatch(_minmaxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
                             currentWidth = nextWidth;
                             currentHeight = nextHeight;
@@ -231,20 +230,11 @@ namespace CameraRecorder
                         _IDWComputeShader.SetInt("MaxSearchIter", maxSearchIter);
                         _IDWComputeShader.SetFloat("Threshold", threshold);
                         _IDWComputeShader.Dispatch(_backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        
-                        
-                        
-                        
-                        
-                        
                         // generate N-Buffer
-                        // for (int layer = 1; layer < yMapsSize; ++layer)
-                        // {
-                        //     IDWComputeShader.SetInt("Layer", layer);
-                        //     IDWComputeShader.SetTexture(nBufferKernel, "PrevNBuffer", yMapsTextures[layer - 1]);
-                        //     IDWComputeShader.SetTexture(nBufferKernel, "CurNBuffer", yMapsTextures[layer]);
-                        //     IDWComputeShader.Dispatch(nBufferKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-                        // }
+                        for (int layer = 0; layer < yMapMipmapCount; ++layer)
+                        {
+                            
+                        }
                         // // cull object
                         // IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
                         // IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
@@ -266,13 +256,13 @@ namespace CameraRecorder
 #endif
 #if DEBUGPRINT
                         // // debug
-                        // SaveRenderTextureToFile(_forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        // ++fileCount;
-                        // for (int i = 0; i <= level; ++i)
-                        // {
-                        //     SaveRenderTextureToFile(_motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        //     ++fileCount;
-                        // }
+                        SaveRenderTextureToFile(_forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
+                        for (int i = 0; i <= level; ++i)
+                        {
+                            SaveRenderTextureToFile(_motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
+                            ++fileCount;
+                        }
                         // SaveRenderTextureToFile(backwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                         // ++fileCount;
                         // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");

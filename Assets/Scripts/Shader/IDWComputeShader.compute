@@ -1,6 +1,7 @@
 #pragma kernel GetMotionVector
 #pragma kernel GenerateMinMaxMipmap
 #pragma kernel BackwardSearch
+#pragma kernel GenerateMaxMipmap
 #pragma kernel GenerateNBuffer
 #pragma kernel ComputeVisibility
 
@@ -13,10 +14,9 @@ float4x4 InversedPrevProjectionViewMatrix;
 float4x4 CurrentProjectionViewMatrix;
 float FarClipPlane, NearClipPlane;
 
-// min-max Mipmap kernel
-RWTexture2D<float4> MotionTextureSrc;
-RWTexture2D<float4> MotionTextureDst;
-int SrcLevel;
+// min-max mipmap kernel
+RWTexture2D<float4> MinmaxMipmapLayerSrc;
+RWTexture2D<float4> MinmaxMipmapLayerDst;
 
 // backward search kernel
 RWTexture2D<float> BackwardWarpingDepthTexture;
@@ -30,7 +30,7 @@ int SeedNum;
 int MaxSearchIter;
 float Threshold;
 
-// NBuffer kernel
+// max mipmap kernel and NBuffer kernel
 Texture2D<float> PrevNBuffer;
 RWTexture2D<float> CurNBuffer;
 int Layer;
@@ -85,17 +85,17 @@ void GetMotionVector(uint3 id : SV_DispatchThreadID)
 void GenerateMinMaxMipmap(uint3 id : SV_DispatchThreadID)
 {
     uint width, height;
-    MotionTextureDst.GetDimensions(width, height);
+    MinmaxMipmapLayerDst.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
     int srcX = id.x * 2;
     int srcY = id.y * 2;
-    float4 val0 = MotionTextureSrc[int2(srcX, srcY)];
-    float4 val1 = MotionTextureSrc[int2(srcX + 1, srcY)];
-    float4 val2 = MotionTextureSrc[int2(srcX, srcY + 1)];
-    float4 val3 = MotionTextureSrc[int2(srcX + 1, srcY + 1)];
+    float4 val0 = MinmaxMipmapLayerSrc[int2(srcX, srcY)];
+    float4 val1 = MinmaxMipmapLayerSrc[int2(srcX + 1, srcY)];
+    float4 val2 = MinmaxMipmapLayerSrc[int2(srcX, srcY + 1)];
+    float4 val3 = MinmaxMipmapLayerSrc[int2(srcX + 1, srcY + 1)];
     float2 minXY = min(min(val0.xy, val1.xy), min(val2.xy, val3.xy));
     float2 maxZW = max(max(val0.zw, val1.zw), max(val2.zw, val3.zw));
-    MotionTextureDst[id.xy] = float4(minXY, maxZW);
+    MinmaxMipmapLayerDst[id.xy] = float4(minXY, maxZW);
 }
 
 float4 GetMipmapDepth(float2 p, int lod)
@@ -180,6 +180,12 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
         predictedDepth = min(predictedDepth, d);
     }
     BackwardWarpingDepthTexture[id.xy] = predictedDepth;
+}
+
+[numthreads(8, 8, 1)]
+void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
+{
+    
 }
 
 [numthreads(8, 8, 1)]
