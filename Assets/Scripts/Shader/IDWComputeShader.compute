@@ -49,6 +49,15 @@ RWTexture2D<float4> DebugTexture;
 
 // Constant
 const float FLT_MAX = 3.4028235e+38;
+const float EPS = 1e-8;
+float4 FrustumPlanes[6] = {
+    float4(-1, 0, 0, -1),
+    float4(1, 0, 0, -1),
+    float4(0, -1, 0, -1),
+    float4(0, 1, 0, -1),
+    float4(0, 0, -1, -1),
+    float4(0, 0, 1, -1),
+};
 
 [numthreads(8, 8, 1)]
 void GetMotionVector(uint3 id : SV_DispatchThreadID)
@@ -229,7 +238,47 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int index = id.x;
     if (index >= ObjectNum) return;
-    // BoundingBoxes
+    Visibility[index] = 1;
+    // cast AABB to screen spaces
     float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
-    Visibility[index] = bottomLeft.z;
+    float4 vertices[8];
+    vertices[0] = CurrentProjectionViewMatrix * float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f);
+    vertices[1] = CurrentProjectionViewMatrix * float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f);
+    vertices[2] = CurrentProjectionViewMatrix * float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f);
+    vertices[3] = CurrentProjectionViewMatrix * float4(upRight.x, upRight.y, bottomLeft.z, 1.0f);
+    vertices[4] = CurrentProjectionViewMatrix * float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f);
+    vertices[5] = CurrentProjectionViewMatrix * float4(upRight.x, bottomLeft.y, upRight.z, 1.0f);
+    vertices[6] = CurrentProjectionViewMatrix * float4(bottomLeft.x, upRight.y, upRight.z, 1.0f);
+    vertices[7] = CurrentProjectionViewMatrix * float4(upRight.x, upRight.y, upRight.z, 1.0f);
+    for (int i = 0; i < 8; ++ i)
+    {
+        vertices[i] /= vertices[i].w;
+    }
+    // frustum culling
+    bool isOutside = false;
+    for (int p = 0; p < 6; ++ p)
+    {
+        bool outsidePlane = true;
+        for (int v = 0; v < 8; ++ v) 
+        {
+            if (dot(FrustumPlanes[p], vertices[v]) < EPS) 
+            {
+                outsidePlane = false;
+                break;
+            }
+        }
+        if (outsidePlane) 
+        {
+            isOutside = true;
+            break;
+        }
+    }
+    if (isOutside) 
+    {
+        Visibility[index] = 0;
+    }
+    else
+    {
+        // WOC
+    }
 }
