@@ -33,7 +33,7 @@ float Threshold;
 // max mipmap kernel and NBuffer kernel
 RWTexture2D<float> PrevYMapBuffer;
 RWTexture2D<float> CurYMapBuffer;
-int Layer, YMapNBufferWidth, YMapNBufferHeight;
+int Layer, YMapNBufferWidth, YMapNBufferHeight, YMapNBufferTotalHeight;
 
 // compute visibility kernel
 struct BoundingBox {
@@ -197,16 +197,16 @@ void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
 
 int2 GetNBufferCoord(int x, int y, int layer)
 {
-    return int2(x, y + layer * YMapNBufferHeight);
+    int2 coord = int2(clamp(x, 0, YMapNBufferWidth - 1), clamp(y + layer * YMapNBufferHeight, 0, YMapNBufferTotalHeight  - 1));
+    return coord;
 }
 
 [numthreads(8, 8, 1)]
 void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= YMapNBufferWidth || id.y >= YMapNBufferHeight) return;
-    int step = 1 << Layer, z = 0.0f;
-    CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer)] = 1.0f;
-    return;
+    int step = 1 << Layer;
+    float z = 0.0f;
     if (Layer == 0)
     {
         z = max(z, PrevYMapBuffer[int2(id.x, id.y)]);

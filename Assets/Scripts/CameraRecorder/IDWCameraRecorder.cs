@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -247,10 +247,11 @@ namespace CameraRecorder
                             curWidth = nextWidth;
                             curHeight = nextHeight;
                         }
-                        _IDWComputeShader.SetTexture(_nBufferKernel, "PrevYMapBuffer", _backwardWarpingDepthTexture, yMapMipmapCount - 1);
+                        _IDWComputeShader.SetTexture(_nBufferKernel, "PrevYMapBuffer", _backwardWarpingDepthTexture, yMapMipmapCount);
                         _IDWComputeShader.SetTexture(_nBufferKernel, "CurYMapBuffer", _nBufferTexture);
                         _IDWComputeShader.SetInt("YMapNBufferWidth", _yMapNBufferWidth);
                         _IDWComputeShader.SetInt("YMapNBufferHeight", _yMapNBufferHeight);
+                        _IDWComputeShader.SetInt("YMapNBufferTotalHeight", _yMapNBufferHeight * _yMapNBufferCount);
                         for (int layer = 0; layer < _yMapNBufferCount; ++layer)
                         {
                             _IDWComputeShader.SetInt("Layer", layer);
@@ -313,8 +314,8 @@ namespace CameraRecorder
                         //     SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
                         //     ++fileCount;
                         // }
-                        SaveRenderTextureToFile(_nBufferTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-                        ++fileCount;
+                        // SaveRenderTextureToFile(_nBufferTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        // ++fileCount;
 #endif
 #if EVALUATE
                         // evaluate
