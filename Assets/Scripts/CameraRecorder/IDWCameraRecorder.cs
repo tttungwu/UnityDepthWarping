@@ -43,6 +43,7 @@ namespace CameraRecorder
         private RenderTexture _forwardWarpingDepthTexture;
         private RenderTexture _backwardWarpingDepthTexture;
         private RenderTexture _motionVectorsTexture;
+        private RenderTexture _nBufferTexture;
         private ComputeBuffer _boundingBoxesBuffer;
         private ComputeBuffer _visibilityBuffer;
         private int[] _visibilityOutcome;
@@ -121,6 +122,10 @@ namespace CameraRecorder
             _yMapNBufferWidth = Mathf.FloorToInt(Screen.width / Mathf.Pow(2, yMapMipmapCount));
             _yMapNBufferHeight = Mathf.FloorToInt(Screen.height / Mathf.Pow(2, yMapMipmapCount));
             _yMapNBufferCount = Mathf.FloorToInt(Mathf.Log(Mathf.Max(_yMapNBufferWidth, _yMapNBufferHeight)) / Mathf.Log(2));
+            _nBufferTexture = new RenderTexture(_yMapNBufferWidth, _yMapNBufferHeight * _yMapNBufferCount, 0,
+                RenderTextureFormat.RFloat);
+            _nBufferTexture.enableRandomWrite = true;
+            _nBufferTexture.Create();
             Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
             Occludee[] occludees = FindObjectsOfType<Occludee>();
             _objectNum = occludees.Length;
@@ -242,6 +247,15 @@ namespace CameraRecorder
                             curWidth = nextWidth;
                             curHeight = nextHeight;
                         }
+                        _IDWComputeShader.SetTexture(_nBufferKernel, "PrevYMapBuffer", _backwardWarpingDepthTexture, yMapMipmapCount - 1);
+                        _IDWComputeShader.SetTexture(_nBufferKernel, "CurYMapBuffer", _nBufferTexture);
+                        _IDWComputeShader.SetInt("YMapNBufferWidth", _yMapNBufferWidth);
+                        _IDWComputeShader.SetInt("YMapNBufferHeight", _yMapNBufferHeight);
+                        for (int layer = 0; layer < _yMapNBufferCount; ++layer)
+                        {
+                            _IDWComputeShader.SetInt("Layer", layer);
+                            _IDWComputeShader.Dispatch(_nBufferKernel, (_yMapNBufferWidth + 7) / 8, (_yMapNBufferHeight + 7) / 8, 1);
+                        }
                         // // cull object
                         // IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
                         // IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
@@ -299,6 +313,8 @@ namespace CameraRecorder
                         //     SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
                         //     ++fileCount;
                         // }
+                        SaveRenderTextureToFile(_nBufferTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                        ++fileCount;
 #endif
 #if EVALUATE
                         // evaluate

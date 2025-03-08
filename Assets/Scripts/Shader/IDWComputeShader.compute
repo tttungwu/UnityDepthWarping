@@ -33,7 +33,7 @@ float Threshold;
 // max mipmap kernel and NBuffer kernel
 RWTexture2D<float> PrevYMapBuffer;
 RWTexture2D<float> CurYMapBuffer;
-int Layer;
+int Layer, YMapNBufferWidth, YMapNBufferHeight;
 
 // compute visibility kernel
 struct BoundingBox {
@@ -190,18 +190,38 @@ void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
     if (id.x >= width || id.y >= height) return;
     int srcX = id.x * 2;
     int srcY = id.y * 2;
-    CurYMapBuffer[id.xy] = max(max(max(PrevYMapBuffer[int2(srcX, srcY)], PrevYMapBuffer[int2(srcX + 1, srcY)]), PrevYMapBuffer[int2(srcX, srcY + 1)]), PrevYMapBuffer[int2(srcX + 1, srcY + 1)]);
+    CurYMapBuffer[id.xy] = max(max(max(PrevYMapBuffer[int2(srcX, srcY)], PrevYMapBuffer[int2(srcX + 1, srcY)]),
+        PrevYMapBuffer[int2(srcX, srcY + 1)]),
+        PrevYMapBuffer[int2(srcX + 1, srcY + 1)]);
+}
+
+int2 GetNBufferCoord(int x, int y, int layer)
+{
+    return int2(x, y + layer * YMapNBufferHeight);
 }
 
 [numthreads(8, 8, 1)]
 void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
 {
-    // uint width, height;
-    // CurNBuffer.GetDimensions(width, height);
-    // if (id.x >= width || id.y >= height) return;
-    //
-    // int offset = 1 << (Layer - 1);
-    // CurNBuffer[id.xy] = max(max(max(PrevNBuffer[id.xy], PrevNBuffer[int2(id.x, id.y + offset)]), PrevNBuffer[int2(id.x + offset, id.y)]), PrevNBuffer[int2(id.x + offset, id.y + offset)]);
+    if (id.x >= YMapNBufferWidth || id.y >= YMapNBufferHeight) return;
+    int step = 1 << Layer, z = 0.0f;
+    CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer)] = 1.0f;
+    return;
+    if (Layer == 0)
+    {
+        z = max(z, PrevYMapBuffer[int2(id.x, id.y)]);
+        z = max(z, PrevYMapBuffer[int2(id.x, id.y + step)]);
+        z = max(z, PrevYMapBuffer[int2(id.x + step, id.y)]);
+        z = max(z, PrevYMapBuffer[int2(id.x + step, id.y + step)]);
+    }
+    else
+    {
+        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer - 1)]);
+        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x, id.y + step, Layer - 1)]);
+        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x + step, id.y, Layer - 1)]);
+        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x + step, id.y + step, Layer - 1)]);
+    }
+    CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer)] = z;
 }
 
 [numthreads(64, 1, 1)]
