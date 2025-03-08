@@ -229,6 +229,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int index = id.x;
     if (index >= ObjectNum) return;
-    if (index % 2 == 0) Visibility[index] = 0;
-    else Visibility[index] = 1;
+    // BoundingBoxes
+    float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
+    Visibility[index] = bottomLeft.z;
 }
