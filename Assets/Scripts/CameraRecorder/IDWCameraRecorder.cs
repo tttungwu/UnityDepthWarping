@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-#define EVALUATE
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -257,16 +257,16 @@ namespace CameraRecorder
                             _IDWComputeShader.SetInt("Layer", layer);
                             _IDWComputeShader.Dispatch(_nBufferKernel, (_yMapNBufferWidth + 7) / 8, (_yMapNBufferHeight + 7) / 8, 1);
                         }
-                        // // cull object
-                        // IDWComputeShader.SetBuffer(computeVisibilityKernel, "BoundingBoxes", boundingBoxesBuffer);
-                        // IDWComputeShader.SetBuffer(computeVisibilityKernel, "Visibility", visibilityBuffer);
-                        // IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
-                        // IDWComputeShader.SetInt("ObjectNum", objectNum);
-                        // IDWComputeShader.Dispatch(computeVisibilityKernel, (objectNum + 63) / 64, 1, 1);
-                        // visibilityBuffer.GetData(visibilityOutcome);
-                        // for (int i = 0; i < visibilityOutcome.Length; i++)
-                        //     Debug.Log(visibilityOutcome[i]);
-                        // Debug.Log("---------------");
+                        // cull object
+                        _IDWComputeShader.SetBuffer(_computeVisibilityKernel, "BoundingBoxes", _boundingBoxesBuffer);
+                        _IDWComputeShader.SetBuffer(_computeVisibilityKernel, "Visibility", _visibilityBuffer);
+                        _IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                        _IDWComputeShader.SetInt("ObjectNum", _objectNum);
+                        _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+                        _visibilityBuffer.GetData(_visibilityOutcome);
+                        for (int i = 0; i < _visibilityOutcome.Length; i++)
+                            Debug.Log(_visibilityOutcome[i]);
+                        Debug.Log("---------------");
 
 #if DEBUGPRINT
                         // debug

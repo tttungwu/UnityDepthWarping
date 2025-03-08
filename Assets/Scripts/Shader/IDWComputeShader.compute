@@ -227,7 +227,7 @@ void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
 [numthreads(64, 1, 1)]
 void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
-    uint index = id.x;
+    int index = id.x;
     if (index >= ObjectNum) return;
     if (index % 2 == 0) Visibility[index] = 0;
     else Visibility[index] = 1;
