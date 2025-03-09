@@ -43,6 +43,7 @@ struct BoundingBox {
 StructuredBuffer<BoundingBox> BoundingBoxes;
 RWStructuredBuffer<int> Visibility;
 int ObjectNum;
+int YMapMipmapCount, YMapNBufferCount;
 
 // Debug
 RWTexture2D<float4> DebugTexture;
@@ -256,7 +257,24 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     {
         // WOC
         float OccludeeMinDepth = 1.0f;
-        
+        float2 LowLeft = float2(1, 1) * FLT_MAX;
+        float2 UpRight = float2(-1, -1) * FLT_MAX;
+        for (int i = 0; i < 8; ++ i)
+        {
+            vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
+            vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
+            vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
+            OccludeeMinDepth = min(OccludeeMinDepth, clamp(vertices[i].z, 0.0f, 1.0f));
+            LowLeft = min(LowLeft, vertices[i].xy);
+            UpRight = max(UpRight, vertices[i].xy);
+        }
+        LowLeft = clamp(LowLeft, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
+        UpRight = clamp(UpRight, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
+        int2 LowLeftInt = int2(floor(LowLeft.x), floor(LowLeft.y));
+        int2 UpRightInt = int2(ceil(UpRight.x), ceil(UpRight.y));
+        int RectWidth = UpRight.x - LowLeft.x + 1;
+        int RectHeight = UpRight.y - LowLeft.y + 1;
+        int LOD = firstbithigh(min(RectWidth, RectHeight));
     }
     else Visibility[index] = 0;
 }

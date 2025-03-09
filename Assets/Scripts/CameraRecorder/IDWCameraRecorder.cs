@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-#define EVALUATE
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -262,6 +262,10 @@ namespace CameraRecorder
                         _IDWComputeShader.SetBuffer(_computeVisibilityKernel, "Visibility", _visibilityBuffer);
                         _IDWComputeShader.SetMatrix("CurrentProjectionViewMatrix", _camera.projectionMatrix * _camera.worldToCameraMatrix);
                         _IDWComputeShader.SetInt("ObjectNum", _objectNum);
+                        _IDWComputeShader.SetInt("Width", Screen.width);
+                        _IDWComputeShader.SetInt("Height", Screen.height);
+                        _IDWComputeShader.SetInt("YMapMipmapCount", yMapMipmapCount);
+                        _IDWComputeShader.SetInt("YMapNBufferCount", _yMapNBufferCount);
                         _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
                         _visibilityBuffer.GetData(_visibilityOutcome);
                         for (int i = 0; i < _visibilityOutcome.Length; i++)
