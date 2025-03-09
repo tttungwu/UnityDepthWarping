@@ -50,6 +50,15 @@ RWTexture2D<float4> DebugTexture;
 
 // Constant
 const float FLT_MAX = 3.4028235e+38;
+const float EPS = 1e-8;
+float4 FrustumPlanes[6] = {
+    float4(-1, 0, 0, -1),
+    float4(1, 0, 0, -1),
+    float4(0, -1, 0, -1),
+    float4(0, 1, 0, -1),
+    float4(0, 0, -1, -1),
+    float4(0, 0, 1, -1),
+};
 
 [numthreads(8, 8, 1)]
 void GetMotionVector(uint3 id : SV_DispatchThreadID)
@@ -242,18 +251,26 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     vertices[5] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
     vertices[6] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
     vertices[7] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
-    bool isInside = false;
-    for (int i = 0; i < 8; ++ i)
+    for (int i = 0; i < 8; ++ i) vertices[i] /= vertices[i].w;
+    bool isOutside = false;
+    for (int p = 0; p < 6; ++ p)
     {
-        vertices[i] /= vertices[i].w;
-        if (vertices[i].x >= -1.0 && vertices[i].x <= 1.0 &&
-            vertices[i].y >= -1.0 && vertices[i].y <= 1.0 &&
-            vertices[i].z >= -1.0 && vertices[i].z <= 1.0)
+        bool outSidePlane = true;
+        for (int v = 0; v < 8; ++ v)
         {
-            isInside = true;
+            if (dot(FrustumPlanes[p], vertices[v]) <= EPS)
+            {
+                outSidePlane = false;
+                break;
+            }
+        }
+        if (outSidePlane)
+        {
+            isOutside = true;
+            break;
         }
     }
-    if (isInside) 
+    if (!isOutside) 
     {
         // WOC
         float OccludeeMinDepth = 1.0f;
