@@ -77,7 +77,7 @@ void GetMotionVector(uint3 id : SV_DispatchThreadID)
     );
     
     float2 diff = currentPixel - float2(id.x, id.y);
-    ForwardWarpingDepthTexture[id.xy] = float4(diff, currentClipPos.z, 0.0);
+    ForwardWarpingDepthTexture[id.xy] = float4(diff, (currentClipPos.z + 1.0) * 0.5, 0.0);
     MotionVector[id.xy] = float4(diff, diff);
 }
 
@@ -255,6 +255,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     if (isInside) 
     {
         // WOC
+        float OccludeeMinDepth = 1.0f;
         
     }
     else Visibility[index] = 0;

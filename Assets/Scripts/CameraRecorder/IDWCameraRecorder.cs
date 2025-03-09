@@ -1,5 +1,5 @@
 #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -404,7 +404,7 @@ namespace CameraRecorder
         {
             float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
             float ndcZ = -_prevProjectionMatrix[2, 2] + _prevProjectionMatrix[2, 3] / z;
-            return ndcZ;
+            return (ndcZ + 1.0f) / 0.5f;
         }
 #if EVALUATE
         private void SaveRenderTextureToBin(RenderTexture texture, string filePath, bool convert = false)
