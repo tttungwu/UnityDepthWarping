@@ -1,5 +1,5 @@
-#define DEBUGPRINT
-#define EVALUATE
+// #define DEBUGPRINT
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -50,6 +50,7 @@ namespace CameraRecorder
         private int _objectNum;
         private int _yMapNBufferCount, _yMapNBufferWidth, _yMapNBufferHeight;
         private Matrix4x4 _prevProjectionMatrix, _prevViewMatrix;
+        private Occludee[] _occludees;
         
 #if DEBUGPRINT
         private int fileCount = 0;
@@ -162,12 +163,12 @@ namespace CameraRecorder
             _nBufferTexture.enableRandomWrite = true;
             _nBufferTexture.Create();
             Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
-            Occludee[] occludees = FindObjectsOfType<Occludee>();
-            _objectNum = occludees.Length;
+            _occludees = FindObjectsOfType<Occludee>();
+            _objectNum = _occludees.Length;
             Vector3[] boundingBoxesData = new Vector3[_objectNum * 2];
             for (int i = 0; i < _objectNum; ++ i)
             {
-                Bounds bounds = occludees[i].GetBounds();
+                Bounds bounds = _occludees[i].GetBounds();
                 boundingBoxesData[i * 2] = bounds.min;
                 boundingBoxesData[i * 2 + 1] = bounds.max;
             }
@@ -306,8 +307,11 @@ namespace CameraRecorder
                         _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
                         _visibilityBuffer.GetData(_visibilityOutcome);
                         for (int i = 0; i < _visibilityOutcome.Length; i++)
+                        {
                             Debug.Log(_visibilityOutcome[i]);
-                        Debug.Log("---------------");
+                            if (_visibilityOutcome[i] == 0) _occludees[i].MarkAsOccluded();
+                            else _occludees[i].MarkAsVisible();
+                        }
 
 #if DEBUGPRINT
                         // debug
