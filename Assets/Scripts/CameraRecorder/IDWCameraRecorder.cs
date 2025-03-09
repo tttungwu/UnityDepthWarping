@@ -108,6 +108,8 @@ namespace CameraRecorder
         private static readonly int ObjectNumShaderPropertyID = Shader.PropertyToID("ObjectNum");
         private static readonly int YMapMipmapCountShaderPropertyID = Shader.PropertyToID("YMapMipmapCount");
         private static readonly int YMapNBufferCountShaderPropertyID = Shader.PropertyToID("YMapNBufferCount");
+        private static readonly int YMapNBufferShaderPropertyID = Shader.PropertyToID("YMapNBuffer");
+        private static readonly int YMapMipmapBufferShaderPropertyID = Shader.PropertyToID("YMapMipmapBuffer");
         private static readonly int DebugTextureShaderPropertyID = Shader.PropertyToID("DebugTexture");
 
         private RenderTexture debugTexture;
@@ -293,6 +295,8 @@ namespace CameraRecorder
                         // cull object
                         _IDWComputeShader.SetBuffer(_computeVisibilityKernel, BoundingBoxesShaderPropertyID, _boundingBoxesBuffer);
                         _IDWComputeShader.SetBuffer(_computeVisibilityKernel, VisibilityShaderPropertyID, _visibilityBuffer);
+                        _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
+                        _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapNBufferShaderPropertyID, _nBufferTexture);
                         _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
                         _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
                         _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
