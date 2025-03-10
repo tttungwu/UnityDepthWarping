@@ -199,7 +199,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6ae4aab585d4f8297761d8030eff951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _IDWComputeShader: {fileID: 0}
+  _IDWComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32, type: 3}
   skipFrameCount: 10
   seedNum: 8
   maxBoundIter: 3

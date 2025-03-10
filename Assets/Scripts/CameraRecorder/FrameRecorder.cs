@@ -67,7 +67,8 @@ namespace CameraRecorder
                 asset.poses[i].position = _positions[i];
                 asset.poses[i].rotation = _rotations[i];
             }
-            var filePath = $"{SavingDir}/CameraRoamingPath_{_timeStart:yyMMdd-H-mm-ss}.asset";
+            string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            var filePath = $"{SavingDir}/CameraRoamingPath_{sceneName}_{_timeStart:yyMMdd-H-mm-ss}.asset";
             AssetDatabase.CreateAsset(asset, filePath);
             Debug.Log("Saving File: " + filePath);
         }
