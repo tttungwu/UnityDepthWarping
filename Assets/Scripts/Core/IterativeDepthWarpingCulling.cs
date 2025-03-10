@@ -1,5 +1,5 @@
 // #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
 using System.IO;

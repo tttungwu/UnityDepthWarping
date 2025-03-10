@@ -36,6 +36,7 @@ def depth_to_grayscale(depth_array):
     else:
         normalized = ((depth_array - depth_min) / (depth_max - depth_min) * 255).astype(np.uint8)
     # normalized = (depth_array * 255).astype(np.uint8)
+    normalized = np.flipud(normalized)
     return normalized
 
 def process_folder(folder_path, folder_name):
