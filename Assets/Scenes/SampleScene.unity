@@ -255,9 +255,34 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2470938824867655779, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2470938824867655779, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
       propertyPath: _IDWComputeShader
       value: 
       objectReference: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32, type: 3}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3541629640446013512, guid: f962406f3336e824eba98ed50998f9d3,
+        type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3729310400594075928, guid: f962406f3336e824eba98ed50998f9d3,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -322,7 +347,7 @@ PrefabInstance:
         type: 3}
       propertyPath: roamingPathAsset
       value: 
-      objectReference: {fileID: 11400000, guid: ffa58fa9179ffcc4abf14712a48a45c0,
+      objectReference: {fileID: 11400000, guid: 3000048b3a0802748913a0b5d649947a,
         type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
