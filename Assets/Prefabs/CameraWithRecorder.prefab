@@ -12,8 +12,10 @@ GameObject:
   - component: {fileID: 3541629640446013512}
   - component: {fileID: 9141328197866469362}
   - component: {fileID: 3105507859633441514}
-  - component: {fileID: 3227017065132677464}
   - component: {fileID: 9160600039508357909}
+  - component: {fileID: 8248467624891379883}
+  - component: {fileID: 8454319748994605321}
+  - component: {fileID: 2470938824867655779}
   m_Layer: 0
   m_Name: CameraWithRecorder
   m_TagString: MainCamera
@@ -139,23 +141,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &3227017065132677464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2223500049070718735}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 700fa4a44d9803c4990370a8f60fe2f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  recordInterval: 0.1
-  playbackFromFile: 0
-  playbackSpeed: 1
-  enableUI: 0
-  playbackRoamingPathAsset: {fileID: 0}
 --- !u!114 &9160600039508357909
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,3 +158,51 @@ MonoBehaviour:
   m_MoveSpeed: 10
   m_MoveSpeedIncrement: 2.5
   m_Turbo: 10
+--- !u!114 &8248467624891379883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2223500049070718735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 700fa4a44d9803c4990370a8f60fe2f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  recordInterval: 0.1
+--- !u!114 &8454319748994605321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2223500049070718735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b876d8363ce443a385a4faa037ed8dee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roamingPathAsset: {fileID: 0}
+  frameId: -1
+  framePlayerSubscribers: []
+  autoPlay: 1
+--- !u!114 &2470938824867655779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2223500049070718735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6ae4aab585d4f8297761d8030eff951, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IDWComputeShader: {fileID: 0}
+  skipFrameCount: 10
+  seedNum: 8
+  maxBoundIter: 3
+  maxSearchIter: 3
+  threshold: 0.1
+  yMapMipmapCount: 3

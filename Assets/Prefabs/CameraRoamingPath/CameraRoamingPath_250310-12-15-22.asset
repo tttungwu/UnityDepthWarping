@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5efbb08451d14c4984ed19fb716968b5, type: 3}
+  m_Name: CameraRoamingPath_250310-12-15-22
+  m_EditorClassIdentifier: 
+  poses:
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.38}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.406702}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -4.8331428}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -5.8844666}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -7.231921}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -8.52587}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -9.67656}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -10.805901}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -11.9361105}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -13.022313}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -14.119154}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -15.236739}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -16.397669}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -17.470219}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -18.61656}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -19.72561}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -20.791416}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -21.590456}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
+  - position: {x: 0, y: 0, z: -22.011765}
+    rotation: {x: 0, y: 0, z: 0, w: 1}
