@@ -308,7 +308,7 @@ namespace CameraRecorder
                         _visibilityBuffer.GetData(_visibilityOutcome);
                         for (int i = 0; i < _visibilityOutcome.Length; i++)
                         {
-                            Debug.Log(_visibilityOutcome[i]);
+                            // Debug.Log(_visibilityOutcome[i]);
                             if (_visibilityOutcome[i] == 0) _occludees[i].MarkAsOccluded();
                             else _occludees[i].MarkAsVisible();
                         }
