@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public interface Culling
+public abstract class Culling : MonoBehaviour
 {
     
 }

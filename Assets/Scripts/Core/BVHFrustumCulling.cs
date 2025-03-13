@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Core;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
-public class BVHFrustumCulling : MonoBehaviour
+public class BVHFrustumCulling : Culling
 {
     public class BVHNode
     {
