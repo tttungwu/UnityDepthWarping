@@ -32,8 +32,10 @@ public class BVHFrustumCulling : CullingMethod
         _root = BuildBVHRecursive(occludeeList);
     }
     
-    private BVHNode BuildBVHRecursive(List<Occludee> objs) 
+    private BVHNode BuildBVHRecursive(List<Occludee> objs)
     {
+        if (objs == null || objs.Count == 0) return null;
+        
         BVHNode node = new BVHNode();
         node.bounds = ComputeBounds(objs);
         if (objs.Count <= leafThreshold) 
@@ -111,7 +113,7 @@ public class BVHFrustumCulling : CullingMethod
         GetAllLeafBounds(node.right, bounds);
     }
 
-    public List<Occludee> GetVisibleBounds()
+    public override List<Occludee> GetVisibleBounds()
     {
         List<Occludee> visibleBounds = new List<Occludee>();
         GetVisibleBoundsRecursive(_root, visibleBounds);
@@ -132,7 +134,7 @@ public class BVHFrustumCulling : CullingMethod
         GetVisibleBoundsRecursive(node.right, visibleBounds);
     }
 
-    public List<Occludee> GetInvisibleBounds()
+    public override List<Occludee> GetInvisibleBounds()
     {
         List<Occludee> invisibleBounds = new List<Occludee>();
         GetInVisibleBoundsRecursive(_root, invisibleBounds);
