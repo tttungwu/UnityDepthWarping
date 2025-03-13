@@ -10,7 +10,6 @@ using UnityEngine.Rendering.Universal;
 
 namespace Core
 {
-    [RequireComponent(typeof(Camera))]
     public class IterativeDepthWarpingCulling : Culling
     {
         private Camera _camera;

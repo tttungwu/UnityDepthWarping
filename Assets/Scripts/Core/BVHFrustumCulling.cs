@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Core;
 using UnityEngine;
 
-[RequireComponent(typeof(Camera))]
 public class BVHFrustumCulling : Culling
 {
     public class BVHNode
