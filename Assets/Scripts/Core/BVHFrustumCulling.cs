@@ -17,12 +17,18 @@ public class BVHFrustumCulling : Culling
     private BVHNode _root;
     private Camera _camera;
 
-    void Start()
+    public override void Init(Camera cam, List<Occludee> bounds)
     {
-        _camera = GetComponent<Camera>();
+        _camera = cam;
+        BuildBVH(bounds);
+    }
+
+    public override void Cull(List<Occludee> bounds = null)
+    {
+        FrustumCull();
     }
     
-    public void BuildBVH(List<Occludee> occludeeList) 
+    private void BuildBVH(List<Occludee> occludeeList) 
     {
         _root = BuildBVHRecursive(occludeeList);
     }
@@ -66,7 +72,7 @@ public class BVHFrustumCulling : Culling
         return bounds;
     }
     
-    public void FrustumCull() 
+    private void FrustumCull() 
     {
         Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(_camera);
         FrustumCullRecursive(_root, frustumPlanes);
