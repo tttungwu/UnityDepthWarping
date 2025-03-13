@@ -92,54 +92,54 @@ public class BVHFrustumCulling : CullingMethod
         FrustumCullRecursive(node.right, frustumPlanes);
     }
 
-    public void GetAllLeafBounds(List<Bounds> bounds)
+    public void GetAllLeafBounds(List<Occludee> bounds)
     {
         GetAllLeafBounds(_root, bounds);
     }
 
-    private void GetAllLeafBounds(BVHNode node, List<Bounds> bounds)
+    private void GetAllLeafBounds(BVHNode node, List<Occludee> bounds)
     {
         if (node == null) return;
         if (node.objects != null)
         {
             foreach (var occludee in node.objects)
             {
-                bounds.Add(occludee.GetComponent<Renderer>().bounds);
+                bounds.Add(occludee);
             }
         }
         GetAllLeafBounds(node.left, bounds);
         GetAllLeafBounds(node.right, bounds);
     }
 
-    public List<Bounds> GetVisibleBounds()
+    public List<Occludee> GetVisibleBounds()
     {
-        List<Bounds> visibleBounds = new List<Bounds>();
+        List<Occludee> visibleBounds = new List<Occludee>();
         GetVisibleBoundsRecursive(_root, visibleBounds);
         return visibleBounds;
     }
 
-    private void GetVisibleBoundsRecursive(BVHNode node, List<Bounds> visibleBounds)
+    private void GetVisibleBoundsRecursive(BVHNode node, List<Occludee> visibleBounds)
     {
         if (node == null || node.visible == false) return;
         if (node.objects != null)
         {
             foreach (var occludee in node.objects)
             {
-                visibleBounds.Add(occludee.GetComponent<Renderer>().bounds);
+                visibleBounds.Add(occludee);
             }
         }
         GetVisibleBoundsRecursive(node.left, visibleBounds);
         GetVisibleBoundsRecursive(node.right, visibleBounds);
     }
 
-    public List<Bounds> GetInvisibleBounds()
+    public List<Occludee> GetInvisibleBounds()
     {
-        List<Bounds> invisibleBounds = new List<Bounds>();
+        List<Occludee> invisibleBounds = new List<Occludee>();
         GetInVisibleBoundsRecursive(_root, invisibleBounds);
         return invisibleBounds;
     }
 
-    private void GetInVisibleBoundsRecursive(BVHNode node, List<Bounds> invisibleBounds)
+    private void GetInVisibleBoundsRecursive(BVHNode node, List<Occludee> invisibleBounds)
     {
         if (node == null) return;
         if (node.visible == false) GetAllLeafBounds(node, invisibleBounds);
