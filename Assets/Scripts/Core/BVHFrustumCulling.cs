@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Core;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
@@ -86,5 +87,58 @@ public class BVHFrustumCulling : MonoBehaviour
         node.visible = true;
         FrustumCullRecursive(node.left, frustumPlanes);
         FrustumCullRecursive(node.right, frustumPlanes);
+    }
+
+    public void GetAllLeafBounds(BVHNode node, List<Bounds> bounds)
+    {
+        if (node == null) return;
+        if (node.objects != null)
+        {
+            foreach (var occludee in node.objects)
+            {
+                bounds.Add(occludee.GetComponent<Renderer>().bounds);
+            }
+        }
+        GetAllLeafBounds(node.left, bounds);
+        GetAllLeafBounds(node.right, bounds);
+    }
+
+    public List<Bounds> GetVisibleBounds()
+    {
+        List<Bounds> visibleBounds = new List<Bounds>();
+        GetVisibleBoundsRecursive(_root, visibleBounds);
+        return visibleBounds;
+    }
+
+    private void GetVisibleBoundsRecursive(BVHNode node, List<Bounds> visibleBounds)
+    {
+        if (node == null || node.visible == false) return;
+        if (node.objects != null)
+        {
+            foreach (var occludee in node.objects)
+            {
+                visibleBounds.Add(occludee.GetComponent<Renderer>().bounds);
+            }
+        }
+        GetVisibleBoundsRecursive(node.left, visibleBounds);
+        GetVisibleBoundsRecursive(node.right, visibleBounds);
+    }
+
+    public List<Bounds> GetInvisibleBounds()
+    {
+        List<Bounds> invisibleBounds = new List<Bounds>();
+        GetInVisibleBoundsRecursive(_root, invisibleBounds);
+        return invisibleBounds;
+    }
+
+    private void GetInVisibleBoundsRecursive(BVHNode node, List<Bounds> invisibleBounds)
+    {
+        if (node == null) return;
+        if (node.visible == false) GetAllLeafBounds(node, invisibleBounds);
+        else
+        {
+            GetInVisibleBoundsRecursive(node.left, invisibleBounds);
+            GetInVisibleBoundsRecursive(node.right, invisibleBounds);
+        }
     }
 }
