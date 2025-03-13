@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using Core;
 using UnityEngine;
 
-public class BVHFrustumCulling : Culling
+public class BVHFrustumCulling : CullingMethod
 {
-    public class BVHNode
+    private class BVHNode
     {
         public Bounds bounds;
         public BVHNode left;
@@ -93,7 +92,12 @@ public class BVHFrustumCulling : Culling
         FrustumCullRecursive(node.right, frustumPlanes);
     }
 
-    public void GetAllLeafBounds(BVHNode node, List<Bounds> bounds)
+    public void GetAllLeafBounds(List<Bounds> bounds)
+    {
+        GetAllLeafBounds(_root, bounds);
+    }
+
+    private void GetAllLeafBounds(BVHNode node, List<Bounds> bounds)
     {
         if (node == null) return;
         if (node.objects != null)
