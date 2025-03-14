@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace CameraRecorder
+namespace FrameRelated
 {
     public abstract class FramePlayerSubscriber : MonoBehaviour
     {

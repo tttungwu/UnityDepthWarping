@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace CameraRecorder
+namespace FrameRelated
 {
     [RequireComponent(typeof(Camera))]
     public class FrameReplayer : MonoBehaviour
@@ -26,7 +26,7 @@ namespace CameraRecorder
             if (frameId == -1) NotifyEnd();
         }
         
-        private void LateUpdate()
+        private void Update()
         {
             if (autoPlay && !PlayDone) PlayNextFrame();
         }

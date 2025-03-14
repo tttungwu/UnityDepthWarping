@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace CameraRecorder
+namespace FrameRelated
 {
     [RequireComponent(typeof(Camera))]
     public class FrameRecorder : MonoBehaviour
