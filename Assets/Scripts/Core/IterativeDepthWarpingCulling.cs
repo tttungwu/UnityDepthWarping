@@ -81,7 +81,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private static readonly int YMapNBufferCountShaderPropertyID = Shader.PropertyToID("YMapNBufferCount");
     private static readonly int YMapNBufferShaderPropertyID = Shader.PropertyToID("YMapNBuffer");
     private static readonly int YMapMipmapBufferShaderPropertyID = Shader.PropertyToID("YMapMipmapBuffer");
-    private static readonly int DebugTextureShaderPropertyID = Shader.PropertyToID("DebugTexture");
 
 #if DEBUGPRINT
     private int fileCount = 0;
