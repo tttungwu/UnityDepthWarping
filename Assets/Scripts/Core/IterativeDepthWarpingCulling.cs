@@ -83,8 +83,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private static readonly int YMapMipmapBufferShaderPropertyID = Shader.PropertyToID("YMapMipmapBuffer");
     private static readonly int DebugTextureShaderPropertyID = Shader.PropertyToID("DebugTexture");
 
-    private RenderTexture debugTexture;
-
 #if DEBUGPRINT
     private int fileCount = 0;
 #endif
@@ -151,11 +149,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
         _boundingBoxesBuffer = new ComputeBuffer(allObjectsNum, sizeof(float) * 3 * 2);
         Debug.Log($"bounding box buffer is created for {allObjectsNum}");
         
-        // todo: delete this
-        debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-        debugTexture.enableRandomWrite = true;
-        debugTexture.Create();
-        
         _motionVectorKernel = _IDWComputeShader.FindKernel("GetMotionVector");
         _minmaxMipmapKernel = _IDWComputeShader.FindKernel("GenerateMinMaxMipmap");
         _backwardKernel = _IDWComputeShader.FindKernel("BackwardSearch");
@@ -203,7 +196,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
             _IDWComputeShader.SetTexture(_backwardKernel, MotionVectorAndPredictedDepthTextureShaderPropertyID, _forwardWarpingDepthTexture);
             _IDWComputeShader.SetTexture(_backwardKernel, BackwardWarpingDepthTextureShaderPropertyID, _backwardWarpingDepthTexture);
             _IDWComputeShader.SetTexture(_backwardKernel, MipmapMotionVectorsTextureShaderPropertyID, _motionVectorsTexture);
-            _IDWComputeShader.SetTexture(_backwardKernel, DebugTextureShaderPropertyID, debugTexture);
             _IDWComputeShader.SetInt(MaxMipmapLevelShaderPropertyID, level);
             _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
             _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
@@ -261,13 +253,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
                 else occludees[i].MarkAsVisible();
             }
 
-#if DEBUGPRINT
-            // debug
-            SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            ++fileCount;
-            SaveIntsToFile(_visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
-            ++fileCount;
-#endif
 #if EVALUATE
             // evaluate
             SaveRenderTextureToBin(_backwardWarpingDepthTexture,

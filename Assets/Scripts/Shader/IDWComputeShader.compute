@@ -46,9 +46,6 @@ int ObjectNum;
 int YMapMipmapCount, YMapNBufferCount;
 Texture2D<float> YMapNBuffer, YMapMipmapBuffer;
 
-// Debug
-RWTexture2D<float4> DebugTexture;
-
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
 
