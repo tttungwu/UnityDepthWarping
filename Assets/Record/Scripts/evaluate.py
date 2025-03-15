@@ -35,7 +35,7 @@ def depth_to_grayscale(depth_array):
         normalized = np.zeros_like(depth_array, dtype=np.uint8)
     else:
         normalized = ((depth_array - depth_min) / (depth_max - depth_min) * 255).astype(np.uint8)
-    normalized = (depth_array * 255).astype(np.uint8)
+    # normalized = (depth_array * 255).astype(np.uint8)
     normalized = np.flipud(normalized)
     return normalized
 

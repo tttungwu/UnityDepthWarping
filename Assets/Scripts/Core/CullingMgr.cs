@@ -28,8 +28,7 @@ public class CullingMgr : MonoBehaviour
             occludees = cullingMethod.GetVisibleBounds();
         }
 
-        List<Occludee> invisible = cullingMethods[^1].GetInvisibleBounds();
-        for (int i = 0; i < invisible.Count; i++) invisible[i].MarkAsOccluded();
+        for (int i = 0; i < _occludees.Count; i++) _occludees[i].MarkAsOccluded();
         List<Occludee> visible = cullingMethods[^1].GetVisibleBounds();
         for (int i = 0; i < visible.Count; i++) visible[i].MarkAsVisible();
     }

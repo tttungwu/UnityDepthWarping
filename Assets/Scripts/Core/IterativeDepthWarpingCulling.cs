@@ -1,5 +1,5 @@
 // #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -169,6 +169,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         if (skipFrameCount > 0) --skipFrameCount;
         else
         {
+            Debug.Log(occludees.Count);
             _occludees = occludees;
             _curViewMatrix = _camera.worldToCameraMatrix;
             _curProjectionMatrix = _camera.projectionMatrix;
