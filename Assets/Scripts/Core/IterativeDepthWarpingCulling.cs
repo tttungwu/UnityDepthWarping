@@ -1,7 +1,8 @@
 // #define DEBUGPRINT
-// #define EVALUATE
+#define EVALUATE
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Reflection;
@@ -90,9 +91,9 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private int referenceCount = 0;
 #endif
 
-    void Start()
+    public override void Init(Camera cam, List<Occludee> bounds)
     {
-        _camera = GetComponent<Camera>();
+        _camera = cam;
         _camera.depthTextureMode = DepthTextureMode.Depth;
         _nearClipPlane = _camera.nearClipPlane;
         _farClipPlane = _camera.farClipPlane;
@@ -116,6 +117,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         {
             Debug.LogWarning("Depth save feature not found");
         }
+        
         _forwardWarpingDepthTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         _forwardWarpingDepthTexture.enableRandomWrite = true;
         _forwardWarpingDepthTexture.Create();
@@ -138,22 +140,15 @@ public class IterativeDepthWarpingCulling : CullingMethod
         _nBufferTexture.enableRandomWrite = true;
         _nBufferTexture.Create();
         Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
-        _occludees = FindObjectsOfType<Occludee>();
-        _objectNum = _occludees.Length;
-        Vector3[] boundingBoxesData = new Vector3[_objectNum * 2];
-        for (int i = 0; i < _objectNum; ++ i)
-        {
-            Bounds bounds = _occludees[i].GetBounds();
-            boundingBoxesData[i * 2] = bounds.min;
-            boundingBoxesData[i * 2 + 1] = bounds.max;
-        }
-        _boundingBoxesBuffer = new ComputeBuffer(_objectNum, sizeof(float) * 3 * 2);
-        _boundingBoxesBuffer.SetData(boundingBoxesData);
+
+        int allObjectsNum = bounds.Count;
         _visibilityOutcome = new int[_objectNum];
-        _visibilityBuffer = new ComputeBuffer(_objectNum, sizeof(int));
+        _visibilityBuffer = new ComputeBuffer(allObjectsNum, sizeof(int));
         _visibilityBuffer.SetData(_visibilityOutcome);
+        _boundingBoxesBuffer = new ComputeBuffer(allObjectsNum, sizeof(float) * 3 * 2);
         Debug.Log($"bounding box buffer is created for {_objectNum}");
         
+        // todo: delete this
         debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         debugTexture.enableRandomWrite = true;
         debugTexture.Create();
@@ -166,7 +161,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         _computeVisibilityKernel = _IDWComputeShader.FindKernel("ComputeVisibility");
     }
 
-    void Update()
+    public override void Cull(List<Occludee> bounds)
     {
         if (skipFrameCount > 0) --skipFrameCount;
         else
@@ -255,52 +250,10 @@ public class IterativeDepthWarpingCulling : CullingMethod
 
 #if DEBUGPRINT
             // debug
-            // SaveRenderTextureToFile(_forwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            // for (int i = 0; i <= level; ++i)
-            // {
-            //     SaveRenderTextureToFile(_motionVectorsTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-            //     ++fileCount;
-            // }
-            // SaveRenderTextureToFile(backwardWarpingDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            // SaveRenderTextureToFile(motionVectorsTexture, level, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            // SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            //
-            // Texture2D tempTexture = new Texture2D(prevDepthTexture.width, prevDepthTexture.height, TextureFormat.RFloat, false);
-            // RenderTexture.active = prevDepthTexture;
-            // tempTexture.ReadPixels(new Rect(0, 0, prevDepthTexture.width, prevDepthTexture.height), 0, 0);
-            // tempTexture.Apply();
-            // Color[] pixels = tempTexture.GetPixels();
-            // Color[] debugDepth = new Color[prevDepthTexture.width * prevDepthTexture.height];
-            //
-            // for (int y = 0; y < prevDepthTexture.height; y++)
-            // {
-            //     for (int x = 0; x < prevDepthTexture.width; x++)
-            //     {
-            //         int index = y * prevDepthTexture.width + x;
-            //         float depth = GetScreenDepth(pixels[index].r);
-            //         debugDepth[index].r = depth;
-            //     }
-            // }
-            // SaveColorsToFile(debugDepth, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            // for (int layer = 0; layer < yMapsSize; ++layer)
-            // {
-            //     SaveRenderTextureToFile(yMapsTextures[layer], 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            //     ++fileCount;
-            // }
-            // SaveIntsToFile(_visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
-            // for (int i = 0; i < yMapMipmapCount; ++i)
-            // {
-            //     SaveRenderTextureToFile(_backwardWarpingDepthTexture, i, "Assets/Debug/DepthData" + fileCount + ".txt");
-            //     ++fileCount;
-            // }
-            // SaveRenderTextureToFile(_nBufferTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
-            // ++fileCount;
+            SaveRenderTextureToFile(debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+            ++fileCount;
+            SaveIntsToFile(_visibilityOutcome, "Assets/Debug/DepthData" + fileCount + ".txt");
+            ++fileCount;
 #endif
 #if EVALUATE
             // evaluate
@@ -315,15 +268,16 @@ public class IterativeDepthWarpingCulling : CullingMethod
 
         _prevViewMatrix = _curViewMatrix;
         _prevProjectionMatrix = _curProjectionMatrix;
-    } 
-
+    }
+    
+#if EVALUATE
     private float GetScreenDepth(float depth)
     {
         float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
         float ndcZ = -_prevProjectionMatrix[2, 2] + _prevProjectionMatrix[2, 3] / z;
         return (ndcZ + 1.0f) * 0.5f;
     }
-#if EVALUATE
+    
     private void SaveRenderTextureToBin(RenderTexture texture, string filePath, bool convert = false)
     {
         if (texture == null)
