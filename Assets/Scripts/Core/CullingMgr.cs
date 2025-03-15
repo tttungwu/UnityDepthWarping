@@ -28,8 +28,8 @@ public class CullingMgr : MonoBehaviour
             occludees = cullingMethod.GetVisibleBounds();
         }
 
-        for (int i = 0; i < _occludees.Count; i++) _occludees[i].MarkAsOccluded();
-        List<Occludee> visible = cullingMethods[^1].GetVisibleBounds();
-        for (int i = 0; i < visible.Count; i++) visible[i].MarkAsVisible();
+        // for (int i = 0; i < _occludees.Count; i++) _occludees[i].MarkAsOccluded();
+        // List<Occludee> visible = cullingMethods[^1].GetVisibleBounds();
+        // for (int i = 0; i < visible.Count; i++) visible[i].MarkAsVisible();
     }
 }

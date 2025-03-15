@@ -255,11 +255,11 @@ public class IterativeDepthWarpingCulling : CullingMethod
             _IDWComputeShader.SetInt(YMapNBufferCountShaderPropertyID, _yMapNBufferCount);
             _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
             _visibilityBuffer.GetData(_visibilityOutcome);
-            // for (int i = 0; i < _objectNum; i++)
-            // {
-            //     if (_visibilityOutcome[i] == 0) occludees[i].MarkAsOccluded();
-            //     else occludees[i].MarkAsVisible();
-            // }
+            for (int i = 0; i < _objectNum; i++)
+            {
+                if (_visibilityOutcome[i] == 0) occludees[i].MarkAsOccluded();
+                else occludees[i].MarkAsVisible();
+            }
 
 #if DEBUGPRINT
             // debug
