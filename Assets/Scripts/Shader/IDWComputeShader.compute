@@ -51,15 +51,6 @@ RWTexture2D<float4> DebugTexture;
 
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
-static const float EPS = 1e-8f;
-static const float4 FrustumPlanes[6] = {
-    float4(-1, 0, 0, -1),
-    float4(1, 0, 0, -1),
-    float4(0, -1, 0, -1),
-    float4(0, 1, 0, -1),
-    float4(0, 0, -1, -1),
-    float4(0, 0, 1, -1),
-};
 
 [numthreads(8, 8, 1)]
 void GetMotionVector(uint3 id : SV_DispatchThreadID)
@@ -241,7 +232,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     int index = id.x;
     if (index >= ObjectNum) return;
     Visibility[index] = 1;
-    // cast AABB to screen spaces
+    // cast AABB to clip space
     float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
     float4 vertices[8];
     vertices[0] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
@@ -252,77 +243,55 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     vertices[5] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
     vertices[6] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
     vertices[7] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
-    for (int v = 0; v < 8; ++ v) vertices[v] /= vertices[v].w;
-    bool isOutside = false;
-    for (int p = 0; p < 6; ++ p)
+    // WOC
+    float OccludeeMinDepth = 1.0f;
+    float2 LowLeft = float2(1, 1) * FLT_MAX;
+    float2 UpRight = float2(-1, -1) * FLT_MAX;
+    for (int i = 0; i < 8; ++ i)
     {
-        bool outSidePlane = true;
-        for (int v = 0; v < 8; ++ v)
+        vertices[i] /= vertices[i].w;
+        vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
+        vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
+        vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
+        OccludeeMinDepth = min(OccludeeMinDepth, clamp(vertices[i].z, 0.0f, 1.0f));
+        LowLeft = min(LowLeft, vertices[i].xy);
+        UpRight = max(UpRight, vertices[i].xy);
+    }
+    LowLeft = clamp(LowLeft, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
+    UpRight = clamp(UpRight, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
+    uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
+    uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
+    int RectWidth = UpRight.x - LowLeft.x + 1;
+    int RectHeight = UpRight.y - LowLeft.y + 1;
+    int LOD = firstbithigh(min(RectWidth, RectHeight));
+    float ScreenSpaceMaxDepth = 0.0f;
+    // YMapNBuffer, YMapMipmapBuffer
+    if (LOD <= YMapMipmapCount)
+    {
+        int Stride = 1 << LOD;
+        for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
         {
-            if (dot(FrustumPlanes[p], vertices[v]) <= EPS)
+            float a = 1.0 * i / Width;
+            for (uint j = LowLeftInt.y; j <= UpRightInt.x; j += Stride)
             {
-                outSidePlane = false;
-                break;
+                float b = 1.0 * j / Height;
+                ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(a, b), LOD));
             }
         }
-        if (outSidePlane)
+    }
+    else
+    {
+        LOD = clamp(LOD - 3, 0, YMapNBufferCount);
+        int Stride = 1 << LOD;
+        int nBufferLength = 1 << YMapMipmapCount;
+        LowLeftInt /= nBufferLength; UpRightInt /= nBufferLength;
+        for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
         {
-            isOutside = true;
-            break;
+            for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
+            {
+                ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapNBuffer[GetNBufferCoord(i, j, LOD - 1)]);
+            }
         }
     }
-    if (isOutside) Visibility[index] = 0;
-    // else
-    // {
-    //     // WOC
-    //     float OccludeeMinDepth = 1.0f;
-    //     float2 LowLeft = float2(1, 1) * FLT_MAX;
-    //     float2 UpRight = float2(-1, -1) * FLT_MAX;
-    //     for (int i = 0; i < 8; ++ i)
-    //     {
-    //         vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
-    //         vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
-    //         vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
-    //         OccludeeMinDepth = min(OccludeeMinDepth, clamp(vertices[i].z, 0.0f, 1.0f));
-    //         LowLeft = min(LowLeft, vertices[i].xy);
-    //         UpRight = max(UpRight, vertices[i].xy);
-    //     }
-    //     LowLeft = clamp(LowLeft, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
-    //     UpRight = clamp(UpRight, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
-    //     uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
-    //     uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
-    //     int RectWidth = UpRight.x - LowLeft.x + 1;
-    //     int RectHeight = UpRight.y - LowLeft.y + 1;
-    //     int LOD = firstbithigh(min(RectWidth, RectHeight));
-    //     float ScreenSpaceMaxDepth = 0.0f;
-    //     // YMapNBuffer, YMapMipmapBuffer
-    //     if (LOD <= YMapMipmapCount)
-    //     {
-    //         int Stride = 1 << LOD;
-    //         for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
-    //         {
-    //             float a = 1.0 * i / Width;
-    //             for (uint j = LowLeftInt.y; j <= UpRightInt.x; j += Stride)
-    //             {
-    //                 float b = 1.0 * j / Height;
-    //                 ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(a, b), LOD));
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         LOD = clamp(LOD - 3, 0, YMapNBufferCount);
-    //         int Stride = 1 << LOD;
-    //         int nBufferLength = 1 << YMapMipmapCount;
-    //         LowLeftInt /= nBufferLength; UpRightInt /= nBufferLength;
-    //         for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
-    //         {
-    //             for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
-    //             {
-    //                 ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapNBuffer[GetNBufferCoord(i, j, LOD - 1)]);
-    //             }
-    //         }
-    //     }
-    //     if (ScreenSpaceMaxDepth < OccludeeMinDepth) Visibility[index] = 0;
-    // }
+    if (ScreenSpaceMaxDepth < OccludeeMinDepth) Visibility[index] = 0;
 }
