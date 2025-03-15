@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiText: {fileID: 87475690754846674}
-  startFrameIdx: 0
+  startFrameIdx: 10
   accumTimeLimit: 60
   deltaTimeUpdateFrequency: 0.1
 --- !u!1 &2649489666232544521

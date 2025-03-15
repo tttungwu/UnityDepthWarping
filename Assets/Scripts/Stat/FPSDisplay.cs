@@ -7,7 +7,7 @@ namespace Stat
     public class FPSDisplay : MonoBehaviour
     {
         public TextMeshProUGUI uiText;
-        public int startFrameIdx;
+        public int startFrameIdx = 10;
         public float accumTimeLimit = 60.0f;
         public float deltaTimeUpdateFrequency = 0.1f;
         private int _frameIdx;
@@ -21,9 +21,6 @@ namespace Stat
         private void Update()
         {
             if (_accumTime >= accumTimeLimit) return;
-// #if UNITY_ANDROID
-//         if (Time.deltaTime <= 1.0f / 144.0f) return; // exclude outlier  
-// #endif
             _frameIdx++;
             if (_frameIdx < startFrameIdx) return;
         
@@ -59,8 +56,6 @@ namespace Stat
                        $"\nAccumTime: {_accumTime:F3}";
             }
             uiText.text = text;
-            // GUI.Box(new Rect(100, 100, 200, 30), text);
-            // GUI.Box(new Rect(100, 100, 200, 130), text);
         }
     }
 }

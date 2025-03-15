@@ -230,7 +230,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _IDWComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32, type: 3}
-  skipFrameCount: 10
+  skipFrameCount: 5
   seedNum: 8
   maxBoundIter: 3
   maxSearchIter: 3
