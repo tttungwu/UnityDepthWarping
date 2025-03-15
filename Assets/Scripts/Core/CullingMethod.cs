@@ -3,12 +3,12 @@ using UnityEngine;
 
 public abstract class CullingMethod : MonoBehaviour
 {
-    public virtual void Init(Camera cam, List<Occludee> bounds)
+    public virtual void Init(Camera cam, List<Occludee> occludees)
     {
         
     }
 
-    public virtual void Cull(List<Occludee> bounds = null)
+    public virtual void Cull(List<Occludee> occludees = null)
     {
         
     }

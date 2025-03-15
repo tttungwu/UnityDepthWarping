@@ -1,5 +1,5 @@
 // #define DEBUGPRINT
-#define EVALUATE
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -23,10 +23,10 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private ComputeBuffer _boundingBoxesBuffer;
     private ComputeBuffer _visibilityBuffer;
     private int[] _visibilityOutcome;
+    private Vector3[] _boundingBoxesData;
     private int _objectNum;
     private int _yMapNBufferCount, _yMapNBufferWidth, _yMapNBufferHeight;
     private Matrix4x4 _prevProjectionMatrix, _prevViewMatrix, _curProjectionMatrix, _curViewMatrix;
-    private Occludee[] _occludees;
     
     public ComputeShader _IDWComputeShader;
     private int _motionVectorKernel;
@@ -142,11 +142,11 @@ public class IterativeDepthWarpingCulling : CullingMethod
         Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
 
         int allObjectsNum = bounds.Count;
-        _visibilityOutcome = new int[_objectNum];
+        _visibilityOutcome = new int[allObjectsNum];
         _visibilityBuffer = new ComputeBuffer(allObjectsNum, sizeof(int));
-        _visibilityBuffer.SetData(_visibilityOutcome);
+        _boundingBoxesData = new Vector3[allObjectsNum * 2];
         _boundingBoxesBuffer = new ComputeBuffer(allObjectsNum, sizeof(float) * 3 * 2);
-        Debug.Log($"bounding box buffer is created for {_objectNum}");
+        Debug.Log($"bounding box buffer is created for {allObjectsNum}");
         
         // todo: delete this
         debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
@@ -161,7 +161,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         _computeVisibilityKernel = _IDWComputeShader.FindKernel("ComputeVisibility");
     }
 
-    public override void Cull(List<Occludee> bounds)
+    public override void Cull(List<Occludee> occludees)
     {
         if (skipFrameCount > 0) --skipFrameCount;
         else
@@ -228,6 +228,15 @@ public class IterativeDepthWarpingCulling : CullingMethod
                 _IDWComputeShader.SetInt(LayerShaderPropertyID, layer);
                 _IDWComputeShader.Dispatch(_nBufferKernel, (_yMapNBufferWidth + 7) / 8, (_yMapNBufferHeight + 7) / 8, 1);
             }
+            // set _boundingBoxesBuffer
+            _objectNum = occludees.Count;
+            for (int i = 0; i < _objectNum; ++i)
+            {
+                Bounds bound = occludees[i].GetBounds();
+                _boundingBoxesData[i * 2] = bound.min;
+                _boundingBoxesData[i * 2 + 1] = bound.max;
+            }
+            _boundingBoxesBuffer.SetData(_boundingBoxesData);
             // cull object
             _IDWComputeShader.SetBuffer(_computeVisibilityKernel, BoundingBoxesShaderPropertyID, _boundingBoxesBuffer);
             _IDWComputeShader.SetBuffer(_computeVisibilityKernel, VisibilityShaderPropertyID, _visibilityBuffer);
@@ -241,11 +250,10 @@ public class IterativeDepthWarpingCulling : CullingMethod
             _IDWComputeShader.SetInt(YMapNBufferCountShaderPropertyID, _yMapNBufferCount);
             _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
             _visibilityBuffer.GetData(_visibilityOutcome);
-            for (int i = 0; i < _visibilityOutcome.Length; i++)
+            for (int i = 0; i < _objectNum; i++)
             {
-                // Debug.Log(_visibilityOutcome[i]);
-                if (_visibilityOutcome[i] == 0) _occludees[i].MarkAsOccluded();
-                else _occludees[i].MarkAsVisible();
+                if (_visibilityOutcome[i] == 0) occludees[i].MarkAsOccluded();
+                else occludees[i].MarkAsVisible();
             }
 
 #if DEBUGPRINT

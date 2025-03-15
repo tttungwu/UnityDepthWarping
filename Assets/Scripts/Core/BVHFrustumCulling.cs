@@ -16,13 +16,13 @@ public class BVHFrustumCulling : CullingMethod
     private BVHNode _root;
     private Camera _camera;
 
-    public override void Init(Camera cam, List<Occludee> bounds)
+    public override void Init(Camera cam, List<Occludee> occludees)
     {
         _camera = cam;
-        BuildBVH(bounds);
+        BuildBVH(occludees);
     }
 
-    public override void Cull(List<Occludee> bounds = null)
+    public override void Cull(List<Occludee> occludees = null)
     {
         FrustumCull();
     }
