@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using System.Reflection;
 using Features;
@@ -25,6 +26,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private int[] _visibilityOutcome;
     private Vector3[] _boundingBoxesData;
     private int _objectNum;
+    private List<Occludee> _occludees;
     private int _yMapNBufferCount, _yMapNBufferWidth, _yMapNBufferHeight;
     private Matrix4x4 _prevProjectionMatrix, _prevViewMatrix, _curProjectionMatrix, _curViewMatrix;
     
@@ -42,7 +44,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
     public int seedNum = 8;
     public int maxBoundIter = 3;
     public int maxSearchIter = 3;
-    public float threshold = 0.1f;
+    public float threshold = 0.5f;
     [Header("yMaps")]
     public int yMapMipmapCount = 3;
     
@@ -91,12 +93,13 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private int referenceCount = 0;
 #endif
 
-    public override void Init(Camera cam, List<Occludee> bounds)
+    public override void Init(Camera cam, List<Occludee> occludees)
     {
         _camera = cam;
         _camera.depthTextureMode = DepthTextureMode.Depth;
         _nearClipPlane = _camera.nearClipPlane;
         _farClipPlane = _camera.farClipPlane;
+        _occludees = occludees;
         var proInfo = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",
             BindingFlags.NonPublic | BindingFlags.Instance);
         if (proInfo != null)
@@ -141,7 +144,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         _nBufferTexture.Create();
         Debug.Log($"yMapNBufferWidth: {_yMapNBufferWidth}; yMapNBufferHeight: {_yMapNBufferHeight}; yMapNBufferCount: {_yMapNBufferCount}");
 
-        int allObjectsNum = bounds.Count;
+        int allObjectsNum = occludees.Count;
         _visibilityOutcome = new int[allObjectsNum];
         _visibilityBuffer = new ComputeBuffer(allObjectsNum, sizeof(int));
         _boundingBoxesData = new Vector3[allObjectsNum * 2];
@@ -166,6 +169,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
         if (skipFrameCount > 0) --skipFrameCount;
         else
         {
+            _occludees = occludees;
             _curViewMatrix = _camera.worldToCameraMatrix;
             _curProjectionMatrix = _camera.projectionMatrix;
             _prevDepthTexture = _depthSaveFeature.GetDepthTexture();
@@ -250,11 +254,11 @@ public class IterativeDepthWarpingCulling : CullingMethod
             _IDWComputeShader.SetInt(YMapNBufferCountShaderPropertyID, _yMapNBufferCount);
             _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
             _visibilityBuffer.GetData(_visibilityOutcome);
-            for (int i = 0; i < _objectNum; i++)
-            {
-                if (_visibilityOutcome[i] == 0) occludees[i].MarkAsOccluded();
-                else occludees[i].MarkAsVisible();
-            }
+            // for (int i = 0; i < _objectNum; i++)
+            // {
+            //     if (_visibilityOutcome[i] == 0) occludees[i].MarkAsOccluded();
+            //     else occludees[i].MarkAsVisible();
+            // }
 
 #if DEBUGPRINT
             // debug
@@ -276,6 +280,20 @@ public class IterativeDepthWarpingCulling : CullingMethod
 
         _prevViewMatrix = _curViewMatrix;
         _prevProjectionMatrix = _curProjectionMatrix;
+    }
+    
+    public override List<Occludee> GetVisibleBounds()
+    {
+        return _occludees
+                    .Where((occludee, index) => _visibilityOutcome[index] == 1)
+                    .ToList();
+    }
+
+    public override List<Occludee> GetInvisibleBounds()
+    {
+        return _occludees
+            .Where((occludee, index) => _visibilityOutcome[index] == 0)
+            .ToList();
     }
     
 #if EVALUATE

@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 8454319748994605321}
   - component: {fileID: 7151277841364571675}
   - component: {fileID: 3581199714295065467}
+  - component: {fileID: -8424661252175659314}
   m_Layer: 0
   m_Name: CameraWithRecorder
   m_TagString: MainCamera
@@ -202,6 +203,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cullingMethods:
   - {fileID: 3581199714295065467}
+  - {fileID: -8424661252175659314}
 --- !u!114 &3581199714295065467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -215,3 +217,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   leafThreshold: 4
+--- !u!114 &-8424661252175659314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2223500049070718735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6ae4aab585d4f8297761d8030eff951, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IDWComputeShader: {fileID: 7200000, guid: 96b6bdcd37d712c4b992d543ee019e32, type: 3}
+  skipFrameCount: 10
+  seedNum: 8
+  maxBoundIter: 3
+  maxSearchIter: 3
+  threshold: 0.5
+  yMapMipmapCount: 3

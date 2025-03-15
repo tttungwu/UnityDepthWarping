@@ -21,22 +21,16 @@ public class CullingMgr : MonoBehaviour
 
     void Update()
     {
-        List<Occludee> occludees = FindObjectsOfType<Occludee>().ToList();
+        List<Occludee> occludees = new List<Occludee>(_occludees);
         foreach (var cullingMethod in cullingMethods)
         {
             cullingMethod.Cull(occludees);
             occludees = cullingMethod.GetVisibleBounds();
         }
 
-        List<Occludee> invisible = cullingMethods[0].GetInvisibleBounds();
-        for (int i = 0; i < invisible.Count; i++)
-        {
-            invisible[i].MarkAsOccluded();
-        }
-        List<Occludee> visible = cullingMethods[0].GetVisibleBounds();
-        for (int i = 0; i < visible.Count; i++)
-        {
-            visible[i].MarkAsVisible();
-        }
+        List<Occludee> invisible = cullingMethods[^1].GetInvisibleBounds();
+        for (int i = 0; i < invisible.Count; i++) invisible[i].MarkAsOccluded();
+        List<Occludee> visible = cullingMethods[^1].GetVisibleBounds();
+        for (int i = 0; i < visible.Count; i++) visible[i].MarkAsVisible();
     }
 }
