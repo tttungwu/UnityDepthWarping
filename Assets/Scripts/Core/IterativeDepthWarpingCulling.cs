@@ -39,7 +39,7 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private int _computeVisibilityKernel;
     
     // hyperpparameter
-    public int skipFrameCount = 200;
+    public int skipFrameCount = 10;
     [Header("backward search")]
     public int seedNum = 8;
     public int maxBoundIter = 3;
