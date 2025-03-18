@@ -197,35 +197,6 @@ void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
         PrevYMapBuffer[int2(srcX + 1, srcY + 1)]);
 }
 
-int2 GetNBufferCoord(int x, int y, int layer)
-{
-    int2 coord = int2(clamp(x, 0, YMapNBufferWidth - 1), clamp(y + layer * YMapNBufferHeight, 0, YMapNBufferTotalHeight  - 1));
-    return coord;
-}
-
-[numthreads(8, 8, 1)]
-void GenerateNBuffer(uint3 id : SV_DispatchThreadID)
-{
-    if (id.x >= (uint)YMapNBufferWidth || id.y >= (uint)YMapNBufferHeight) return;
-    int step = 1 << Layer;
-    float z = 0.0f;
-    if (Layer == 0)
-    {
-        z = max(z, PrevYMapBuffer[int2(id.x, id.y)]);
-        z = max(z, PrevYMapBuffer[int2(id.x, id.y + step)]);
-        z = max(z, PrevYMapBuffer[int2(id.x + step, id.y)]);
-        z = max(z, PrevYMapBuffer[int2(id.x + step, id.y + step)]);
-    }
-    else
-    {
-        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer - 1)]);
-        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x, id.y + step, Layer - 1)]);
-        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x + step, id.y, Layer - 1)]);
-        z = max(z, CurYMapBuffer[GetNBufferCoord(id.x + step, id.y + step, Layer - 1)]);
-    }
-    CurYMapBuffer[GetNBufferCoord(id.x, id.y, Layer)] = z;
-}
-
 [numthreads(64, 1, 1)]
 void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
