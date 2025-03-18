@@ -5,7 +5,6 @@
 #pragma kernel GenerateMinMaxMipmap
 #pragma kernel BackwardSearch
 #pragma kernel GenerateMaxMipmap
-#pragma kernel GenerateNBuffer
 #pragma kernel ComputeVisibility
 
 // motion vector kernel
@@ -36,7 +35,7 @@ float Threshold;
 // max mipmap kernel and NBuffer kernel
 RWTexture2D<float> PrevYMapBuffer;
 RWTexture2D<float> CurYMapBuffer;
-int Layer, YMapNBufferWidth, YMapNBufferHeight, YMapNBufferTotalHeight;
+int YMapWidth, YMapHeight;
 
 // compute visibility kernel
 struct BoundingBox {
@@ -46,8 +45,8 @@ struct BoundingBox {
 StructuredBuffer<BoundingBox> BoundingBoxes;
 RWStructuredBuffer<int> Visibility;
 int ObjectNum;
-int YMapMipmapCount, YMapNBufferCount;
-Texture2D<float> YMapNBuffer, YMapMipmapBuffer;
+int YMapMipmapMaxLevel;
+Texture2D<float> YMapMipmapBuffer;
 
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
@@ -170,7 +169,7 @@ float FixedPointIteration(float2 p, float2 v0)
 void BackwardSearch(uint3 id : SV_DispatchThreadID)
 {
     uint width, height;
-    BackwardWarpingDepthTexture.GetDimensions(width, height);
+    MotionVectorAndPredictedDepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
 
     float4 bound = GetMotionBound(float2(id.xy));
@@ -187,9 +186,7 @@ void BackwardSearch(uint3 id : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
 {
-    uint width, height;
-    CurYMapBuffer.GetDimensions(width, height);
-    if (id.x >= width || id.y >= height) return;
+    if (id.x >= YMapWidth || id.y >= YMapHeight) return;
     int srcX = id.x * 2;
     int srcY = id.y * 2;
     CurYMapBuffer[id.xy] = max(max(max(PrevYMapBuffer[int2(srcX, srcY)], PrevYMapBuffer[int2(srcX + 1, srcY)]),
@@ -202,7 +199,6 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int index = id.x;
     if (index >= ObjectNum) return;
-    Visibility[index] = 1;
     // cast AABB to clip space
     float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
     float4 vertices[8];
@@ -228,41 +224,19 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
         LowLeft = min(LowLeft, vertices[i].xy);
         UpRight = max(UpRight, vertices[i].xy);
     }
-    LowLeft = clamp(LowLeft, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
-    UpRight = clamp(UpRight, float2(0.0f, 0.0f), float2(Width - 1, Height - 1));
     uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
     uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
     int RectWidth = UpRight.x - LowLeft.x + 1;
     int RectHeight = UpRight.y - LowLeft.y + 1;
     int LOD = firstbithigh(min(RectWidth, RectHeight));
     float ScreenSpaceMaxDepth = 0.0f;
-    // YMapNBuffer, YMapMipmapBuffer
-    if (LOD <= YMapMipmapCount)
+    int Stride = 1 << LOD;
+    for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
     {
-        int Stride = 1 << LOD;
-        for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
+        for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
         {
-            float a = 1.0 * i / Width;
-            for (uint j = LowLeftInt.y; j <= UpRightInt.x; j += Stride)
-            {
-                float b = 1.0 * j / Height;
-                ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(a, b), LOD));
-            }
+            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
         }
     }
-    else
-    {
-        LOD = clamp(LOD - 3, 0, YMapNBufferCount);
-        int Stride = 1 << LOD;
-        int nBufferLength = 1 << YMapMipmapCount;
-        LowLeftInt /= nBufferLength; UpRightInt /= nBufferLength;
-        for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
-        {
-            for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
-            {
-                ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapNBuffer[GetNBufferCoord(i, j, LOD - 1)]);
-            }
-        }
-    }
-    if (ScreenSpaceMaxDepth < OccludeeMinDepth) Visibility[index] = 0;
+    Visibility[index] = ScreenSpaceMaxDepth < OccludeeMinDepth ? 0 : 1;
 }

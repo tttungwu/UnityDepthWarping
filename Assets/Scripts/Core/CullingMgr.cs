@@ -30,6 +30,7 @@ public class CullingMgr : MonoBehaviour
 
         // for (int i = 0; i < _occludees.Count; i++) _occludees[i].MarkAsOccluded();
         // List<Occludee> visible = cullingMethods[^1].GetVisibleBounds();
+        // Debug.Log($"After WOC: {visible.Count}");
         // for (int i = 0; i < visible.Count; i++) visible[i].MarkAsVisible();
     }
 }
