@@ -272,7 +272,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
         for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
         {
             float a = 1.0 * i / Width;
-            for (uint j = LowLeftInt.y; j <= UpRightInt.x; j += Stride)
+            for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
             {
                 float b = 1.0 * j / Height;
                 ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(a, b), LOD));
