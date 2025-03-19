@@ -61,13 +61,14 @@ public class SceneGenerator : MonoBehaviour
             }
         }
 
-        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        ground.transform.localScale = new Vector3(100, 1, 100);
-        ground.transform.position = Vector3.zero;
-
-        GameObject occludees = new GameObject("OCCLUDEES");
+        // GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        // ground.transform.localScale = new Vector3(100, 1, 100);
+        // ground.transform.position = Vector3.zero;
         
-        int numObjects = 10000;
+        GameObject occludees = GameObject.Find("OCCLUDEES");
+        if (occludees == null) occludees = new GameObject("OCCLUDEES");
+        
+        int numObjects = 20000;
         List<GameObject> existingObjects = new List<GameObject>();
         for (int i = 0; i < numObjects; i++)
         {
@@ -106,8 +107,8 @@ public class SceneGenerator : MonoBehaviour
                 float yRotation = Random.Range(0f, 360f);
                 obj.transform.rotation = Quaternion.Euler(0, yRotation, 0);
 
-                float x = Random.Range(-5000f, 5000f);
-                float z = Random.Range(-5000f, 5000f);
+                float x = Random.Range(500f, 1500f);
+                float z = Random.Range(-500f, 500f);
 
                 if (type == PrimitiveType.Cube || type == PrimitiveType.Sphere)
                 {
