@@ -1,0 +1,151 @@
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using UnityEditor.SceneManagement;
+
+public class SceneGenerator : MonoBehaviour
+{
+    private static string[] colorNames = new string[]
+    {
+        "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta", "White"
+    };
+
+    [MenuItem("Tools/Scenes/Generate Materials")]
+    public static void GenerateMaterials()
+    {
+        if (!AssetDatabase.IsValidFolder("Assets/Materials"))
+        {
+            AssetDatabase.CreateFolder("Assets", "Materials");
+        }
+
+        Color[] fixedColors = new Color[]
+        {
+            Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.magenta, Color.white
+        };
+
+        for (int i = 0; i < fixedColors.Length; i++)
+        {
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.color = fixedColors[i];
+            string matName = colorNames[i];
+            AssetDatabase.CreateAsset(mat, "Assets/Materials/" + matName + ".mat");
+        }
+
+        Debug.Log("7 color materials have been generated and saved to Assets/Materials folder.");
+    }
+
+    [MenuItem("Tools/Scenes/Generate Scene")]
+    public static void GenerateScene()
+    {
+        Material[] materials;
+        materials = new Material[colorNames.Length];
+        for (int i = 0; i < colorNames.Length; i++)
+        {
+            materials[i] = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/" + colorNames[i] + ".mat");
+            if (materials[i] == null)
+            {
+                Debug.LogError("Material " + colorNames[i] + ".mat not found. Please generate materials first.");
+                return;
+            }
+        }
+
+        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        ground.transform.localScale = new Vector3(1000, 1, 1000);
+        ground.transform.position = Vector3.zero;
+
+        GameObject occludees = new GameObject("OCCLUDEES");
+        
+        int numObjects = 10000;
+        List<GameObject> existingObjects = new List<GameObject>();
+        for (int i = 0; i < numObjects; i++)
+        {
+            PrimitiveType type = (PrimitiveType)Random.Range(0, 3);
+            GameObject obj = GameObject.CreatePrimitive(type);
+
+            Collider objCollider;
+            switch (type)
+            {
+                case PrimitiveType.Cube:
+                    objCollider = obj.GetComponent<BoxCollider>();
+                    if (objCollider == null) objCollider = obj.AddComponent<BoxCollider>();
+                    break;
+                case PrimitiveType.Sphere:
+                    objCollider = obj.GetComponent<SphereCollider>();
+                    if (objCollider == null) objCollider = obj.AddComponent<SphereCollider>();
+                    break;
+                case PrimitiveType.Capsule:
+                    objCollider = obj.GetComponent<CapsuleCollider>();
+                    if (objCollider == null) objCollider = obj.AddComponent<CapsuleCollider>();
+                    break;
+                default:
+                    objCollider = obj.AddComponent<BoxCollider>();
+                    break;
+            }
+
+            Vector3 pos = Vector3.zero;
+            float s = 0.0f;
+            int attempts = 0;
+            bool placed = false;
+
+            while (attempts < 10)
+            {
+                s = Random.Range(0.1f, 10f);
+                obj.transform.localScale = new Vector3(s, s, s);
+
+                float yRotation = Random.Range(0f, 360f);
+                obj.transform.rotation = Quaternion.Euler(0, yRotation, 0);
+
+                float x = Random.Range(-5000f, 5000f);
+                float z = Random.Range(-5000f, 5000f);
+
+                if (type == PrimitiveType.Cube || type == PrimitiveType.Sphere)
+                {
+                    pos = new Vector3(x, 0.5f * s, z); 
+                }
+                else 
+                {
+                    pos = new Vector3(x, s, z);
+                }
+
+                bool overlap = false;
+                foreach (var existing in existingObjects)
+                {
+                    Collider existingCollider = existing.GetComponent<Collider>();
+                    if (existingCollider != null && objCollider.bounds.Intersects(existingCollider.bounds))
+                    {
+                        overlap = true;
+                        break;
+                    }
+                }
+
+                if (!overlap)
+                {
+                    placed = true;
+                    break;
+                }
+
+                attempts++;
+            }
+
+            if (!placed)
+            {
+                Debug.LogWarning("Could not place object without overlapping after 10 attempts. Skipping.");
+                DestroyImmediate(obj);
+                continue;
+            }
+
+            obj.transform.position = pos;
+
+            int matIndex = Random.Range(0, materials.Length);
+            obj.GetComponent<MeshRenderer>().material = materials[matIndex];
+
+            existingObjects.Add(obj);
+
+            obj.transform.parent = occludees.transform;
+        }
+        var scene = EditorSceneManager.GetActiveScene();
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("Scene generation complete. Generated " + existingObjects.Count + " objects.");
+    }
+}
