@@ -13,20 +13,31 @@ public class SceneGenerator : MonoBehaviour
     [MenuItem("Tools/Scenes/Generate Materials")]
     public static void GenerateMaterials()
     {
+        // Check and create Materials folder if it doesn't exist
         if (!AssetDatabase.IsValidFolder("Assets/Materials"))
         {
             AssetDatabase.CreateFolder("Assets", "Materials");
         }
 
+        // Find and validate URP Lit shader
+        Shader urpLitShader = Shader.Find("Universal Render Pipeline/Lit");
+        if (urpLitShader == null)
+        {
+            Debug.LogError("Universal Render Pipeline/Lit shader not found. Please ensure URP is installed and configured in the project.");
+            return;
+        }
+
+        // Define color array
         Color[] fixedColors = new Color[]
         {
             Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.magenta, Color.white
         };
 
+        // Create and save materials
         for (int i = 0; i < fixedColors.Length; i++)
         {
-            Material mat = new Material(Shader.Find("Standard"));
-            mat.color = fixedColors[i];
+            Material mat = new Material(urpLitShader); // Use URP Lit shader
+            mat.SetColor("_BaseColor", fixedColors[i]); // Set base color for URP Lit
             string matName = colorNames[i];
             AssetDatabase.CreateAsset(mat, "Assets/Materials/" + matName + ".mat");
         }
@@ -129,7 +140,7 @@ public class SceneGenerator : MonoBehaviour
 
             if (!placed)
             {
-                Debug.LogWarning("Could not place object without overlapping after 10 attempts. Skipping.");
+                Debug.LogWarning("Could not place object without overlapping after 10 attempts. Skipping this object.");
                 DestroyImmediate(obj);
                 continue;
             }
@@ -146,6 +157,6 @@ public class SceneGenerator : MonoBehaviour
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
-        Debug.Log("Scene generation complete. Generated " + existingObjects.Count + " objects.");
+        Debug.Log("Scene generation completed. Generated " + existingObjects.Count + " objects.");
     }
 }
