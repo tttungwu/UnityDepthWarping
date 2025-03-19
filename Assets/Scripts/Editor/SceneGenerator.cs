@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using UnityEditor.SceneManagement;
+using UnityEngine.Rendering.Universal;
 
 public class SceneGenerator : MonoBehaviour
 {
@@ -61,7 +62,7 @@ public class SceneGenerator : MonoBehaviour
         }
 
         GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        ground.transform.localScale = new Vector3(1000, 1, 1000);
+        ground.transform.localScale = new Vector3(100, 1, 100);
         ground.transform.position = Vector3.zero;
 
         GameObject occludees = new GameObject("OCCLUDEES");
@@ -72,7 +73,6 @@ public class SceneGenerator : MonoBehaviour
         {
             PrimitiveType type = (PrimitiveType)Random.Range(0, 3);
             GameObject obj = GameObject.CreatePrimitive(type);
-
             Collider objCollider;
             switch (type)
             {
@@ -117,6 +117,8 @@ public class SceneGenerator : MonoBehaviour
                 {
                     pos = new Vector3(x, s, z);
                 }
+                obj.transform.position = pos;
+                Physics.SyncTransforms();
 
                 bool overlap = false;
                 foreach (var existing in existingObjects)
@@ -137,15 +139,13 @@ public class SceneGenerator : MonoBehaviour
 
                 attempts++;
             }
-
+            
             if (!placed)
             {
                 Debug.LogWarning("Could not place object without overlapping after 10 attempts. Skipping this object.");
                 DestroyImmediate(obj);
                 continue;
             }
-
-            obj.transform.position = pos;
 
             int matIndex = Random.Range(0, materials.Length);
             obj.GetComponent<MeshRenderer>().material = materials[matIndex];
