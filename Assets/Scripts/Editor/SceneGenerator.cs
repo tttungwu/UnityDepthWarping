@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using UnityEditor.SceneManagement;
-using UnityEngine.Rendering.Universal;
 
 public class SceneGenerator : MonoBehaviour
 {
@@ -61,10 +60,6 @@ public class SceneGenerator : MonoBehaviour
             }
         }
 
-        // GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        // ground.transform.localScale = new Vector3(100, 1, 100);
-        // ground.transform.position = Vector3.zero;
-        
         GameObject occludees = GameObject.Find("OCCLUDEES");
         if (occludees == null) occludees = new GameObject("OCCLUDEES");
         
@@ -101,13 +96,13 @@ public class SceneGenerator : MonoBehaviour
 
             while (attempts < 10)
             {
-                s = Random.Range(0.1f, 10f);
+                s = Random.Range(5f, 10f);
                 obj.transform.localScale = new Vector3(s, s, s);
 
                 float yRotation = Random.Range(0f, 360f);
                 obj.transform.rotation = Quaternion.Euler(0, yRotation, 0);
 
-                float x = Random.Range(500f, 1500f);
+                float x = Random.Range(-500f, 500f);
                 float z = Random.Range(-500f, 500f);
 
                 if (type == PrimitiveType.Cube || type == PrimitiveType.Sphere)
@@ -124,8 +119,8 @@ public class SceneGenerator : MonoBehaviour
                 bool overlap = false;
                 foreach (var existing in existingObjects)
                 {
-                    Collider existingCollider = existing.GetComponent<Collider>();
-                    if (existingCollider != null && objCollider.bounds.Intersects(existingCollider.bounds))
+                    Renderer existingRenderer = existing.GetComponent<Renderer>();
+                    if (existingRenderer != null && objCollider.GetComponent<Renderer>().bounds.Intersects(existingRenderer.bounds))
                     {
                         overlap = true;
                         break;
