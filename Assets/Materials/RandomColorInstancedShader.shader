@@ -1,10 +1,5 @@
 Shader "Unlit/RandomColorInstancedShader"
 {
-   Properties
-    {
-        _BaseColor ("Base Color", Color) = (1, 0, 0, 1)
-    }
-
     SubShader
     {
         Tags { "RenderType"="Opaque" "Queue"="Geometry" "LightMode"="UniversalForward" }
@@ -31,10 +26,6 @@ Shader "Unlit/RandomColorInstancedShader"
                 float4 color : COLOR;
             };
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
-            CBUFFER_END
-
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
                 StructuredBuffer<float4x4> instanceMatrix;
             #endif
@@ -54,17 +45,11 @@ Shader "Unlit/RandomColorInstancedShader"
                 OUT.pos = TransformWorldToHClip(worldPos.xyz);
                 OUT.uv = IN.uv;
 
-                float3 color;
-                #ifdef UNITY_INSTANCING_ENABLED
-                    color = float3(
-                        frac((instanceTransform._11 + instanceTransform._12 + instanceTransform._13 + instanceTransform._14) / 4.0f),
-                        frac((instanceTransform._21 + instanceTransform._22 + instanceTransform._23 + instanceTransform._24) / 4.0f),
-                        frac((instanceTransform._31 + instanceTransform._32 + instanceTransform._33 + instanceTransform._34) / 4.0f)
-                    );
-                #else
-                    color = _BaseColor.rgb;
-                #endif
-
+                float3 color = float3(
+                    frac((instanceTransform._11 + instanceTransform._12 + instanceTransform._13 + instanceTransform._14) / 4.0f),
+                    frac((instanceTransform._21 + instanceTransform._22 + instanceTransform._23 + instanceTransform._24) / 4.0f),
+                    frac((instanceTransform._31 + instanceTransform._32 + instanceTransform._33 + instanceTransform._34) / 4.0f)
+                );
                 OUT.color = float4(color, 1.0f);
                 return OUT;
             }
