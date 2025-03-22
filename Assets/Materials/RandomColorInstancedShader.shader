@@ -1,9 +1,8 @@
-Shader "Unlit/InstanceRandomColorMatrixURP"
+Shader "Unlit/RandomColorInstancedShader"
 {
-    Properties
+   Properties
     {
-        // 添加一个默认颜色属性，以便非实例化时使用
-        _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
+        _BaseColor ("Base Color", Color) = (1, 0, 0, 1)
     }
 
     SubShader
@@ -32,36 +31,35 @@ Shader "Unlit/InstanceRandomColorMatrixURP"
                 float4 color : COLOR;
             };
 
-            // 定义默认颜色
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
             CBUFFER_END
 
-            // Unity 内置的实例化矩阵（仅在 DrawMeshInstanced 时有效）
-            UNITY_INSTANCING_BUFFER_START(Props)
-                // 可选：如果需要通过 MaterialPropertyBlock 传递额外数据，可以在这里定义
-            UNITY_INSTANCING_BUFFER_END(Props)
+            #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+                StructuredBuffer<float4x4> instanceMatrix;
+            #endif
 
             Varyings vert(Attributes IN, uint instanceID : SV_InstanceID)
             {
                 Varyings OUT;
                 
-                float4x4 instanceMatrix;
-                UNITY_SETUP_INSTANCE_ID(IN);
-                instanceMatrix = UNITY_MATRIX_M;
+                float4x4 instanceTransform;
+                #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+                    instanceTransform = instanceMatrix[instanceID];
+                #else
+                    instanceTransform = UNITY_MATRIX_M;
+                #endif
 
-                // 计算世界空间位置
-                float4 worldPos = mul(instanceMatrix, IN.vertex);
+                float4 worldPos = mul(instanceTransform, IN.vertex);
                 OUT.pos = TransformWorldToHClip(worldPos.xyz);
                 OUT.uv = IN.uv;
 
-                // 计算颜色
                 float3 color;
                 #ifdef UNITY_INSTANCING_ENABLED
                     color = float3(
-                        frac((instanceMatrix._11 + instanceMatrix._12 + instanceMatrix._13 + instanceMatrix._14) / 4.0f),
-                        frac((instanceMatrix._21 + instanceMatrix._22 + instanceMatrix._23 + instanceMatrix._24) / 4.0f),
-                        frac((instanceMatrix._31 + instanceMatrix._32 + instanceMatrix._33 + instanceMatrix._34) / 4.0f)
+                        frac((instanceTransform._11 + instanceTransform._12 + instanceTransform._13 + instanceTransform._14) / 4.0f),
+                        frac((instanceTransform._21 + instanceTransform._22 + instanceTransform._23 + instanceTransform._24) / 4.0f),
+                        frac((instanceTransform._31 + instanceTransform._32 + instanceTransform._33 + instanceTransform._34) / 4.0f)
                     );
                 #else
                     color = _BaseColor.rgb;
