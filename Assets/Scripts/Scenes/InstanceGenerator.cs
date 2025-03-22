@@ -103,33 +103,16 @@ public class RandomInstanceGenerator : EditorWindow
         DestroyImmediate(tempObj);
 
         string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string assetName = $"{selectedMesh.name}_{selectedMaterial.name}_{timestamp}";
-        MatrixAsset matrixAsset = ScriptableObject.CreateInstance<MatrixAsset>();
-        matrixAsset.matrices = matrices.ToArray();
+        string assetName = $"{selectedMesh.name}_{selectedMaterial.name}_{matrices.Count}_{timestamp}";
+        InstanceDataAsset instanceDataAsset = ScriptableObject.CreateInstance<InstanceDataAsset>();
+        instanceDataAsset.matrices = matrices.ToArray();
+        instanceDataAsset.material = selectedMaterial;
+        instanceDataAsset.mesh = selectedMesh;
 
-        string path = $"Assets/{assetName}.asset";
-        AssetDatabase.CreateAsset(matrixAsset, path);
+        string path = $"Assets/Prefabs/Matrix/{assetName}.asset";
+        AssetDatabase.CreateAsset(instanceDataAsset, path);
         AssetDatabase.SaveAssets();
 
         Debug.Log($"Generated {matrices.Count} instances. Asset saved as: {path}");
-
-        GameObject previewParent = new GameObject("Preview_" + assetName);
-        for (int i = 0; i < matrices.Count; i++)
-        {
-            GameObject instance = new GameObject($"Instance_{i}");
-            instance.transform.parent = previewParent.transform;
-            instance.transform.position = matrices[i].GetColumn(3);
-            instance.transform.rotation = matrices[i].rotation;
-            instance.transform.localScale = matrices[i].lossyScale;
-
-            MeshFilter instanceMF = instance.AddComponent<MeshFilter>();
-            MeshRenderer instanceMR = instance.AddComponent<MeshRenderer>();
-            instanceMF.mesh = selectedMesh;
-            instanceMR.material = selectedMaterial;
-        }
     }
-}
-public class MatrixAsset : ScriptableObject
-{
-    public Matrix4x4[] matrices;
 }
