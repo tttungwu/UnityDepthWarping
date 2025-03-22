@@ -13,13 +13,11 @@ public class SceneGenerator : MonoBehaviour
     [MenuItem("Tools/Scenes/Generate Materials")]
     public static void GenerateMaterials()
     {
-        // Check and create Materials folder if it doesn't exist
         if (!AssetDatabase.IsValidFolder("Assets/Materials"))
         {
             AssetDatabase.CreateFolder("Assets", "Materials");
         }
 
-        // Find and validate URP Lit shader
         Shader urpLitShader = Shader.Find("Universal Render Pipeline/Lit");
         if (urpLitShader == null)
         {
@@ -27,17 +25,15 @@ public class SceneGenerator : MonoBehaviour
             return;
         }
 
-        // Define color array
         Color[] fixedColors = new Color[]
         {
             Color.red, Color.green, Color.blue, Color.yellow, Color.cyan, Color.magenta, Color.white
         };
 
-        // Create and save materials
         for (int i = 0; i < fixedColors.Length; i++)
         {
-            Material mat = new Material(urpLitShader); // Use URP Lit shader
-            mat.SetColor("_BaseColor", fixedColors[i]); // Set base color for URP Lit
+            Material mat = new Material(urpLitShader);
+            mat.SetColor("_BaseColor", fixedColors[i]);
             string matName = colorNames[i];
             AssetDatabase.CreateAsset(mat, "Assets/Materials/" + matName + ".mat");
         }
@@ -62,12 +58,22 @@ public class SceneGenerator : MonoBehaviour
 
         GameObject occludees = GameObject.Find("OCCLUDEES");
         if (occludees == null) occludees = new GameObject("OCCLUDEES");
-        
+
         int numObjects = 20000;
         List<GameObject> existingObjects = new List<GameObject>();
+
+        PrimitiveType[] typePool = new PrimitiveType[]
+        {
+            PrimitiveType.Cube,
+            PrimitiveType.Sphere,
+            PrimitiveType.Sphere,
+            PrimitiveType.Sphere,
+            PrimitiveType.Capsule
+        };
+
         for (int i = 0; i < numObjects; i++)
         {
-            PrimitiveType type = (PrimitiveType)Random.Range(0, 3);
+            PrimitiveType type = typePool[Random.Range(0, typePool.Length)];
             GameObject obj = GameObject.CreatePrimitive(type);
             Collider objCollider;
             switch (type)
@@ -96,14 +102,14 @@ public class SceneGenerator : MonoBehaviour
 
             while (attempts < 10)
             {
-                s = Random.Range(5f, 10f);
+                s = Random.Range(0.5f, 10f);
                 obj.transform.localScale = new Vector3(s, s, s);
 
                 float yRotation = Random.Range(0f, 360f);
                 obj.transform.rotation = Quaternion.Euler(0, yRotation, 0);
 
-                float x = Random.Range(-500f, 500f);
-                float z = Random.Range(-500f, 500f);
+                float x = Random.Range(500f, 1495f);
+                float z = Random.Range(-500f, 495f);
 
                 if (type == PrimitiveType.Cube || type == PrimitiveType.Sphere)
                 {
@@ -120,7 +126,8 @@ public class SceneGenerator : MonoBehaviour
                 foreach (var existing in existingObjects)
                 {
                     Renderer existingRenderer = existing.GetComponent<Renderer>();
-                    if (existingRenderer != null && objCollider.GetComponent<Renderer>().bounds.Intersects(existingRenderer.bounds))
+                    Renderer objRenderer = obj.GetComponent<Renderer>();
+                    if (existingRenderer != null && objRenderer != null && objRenderer.bounds.Intersects(existingRenderer.bounds))
                     {
                         overlap = true;
                         break;
@@ -135,7 +142,7 @@ public class SceneGenerator : MonoBehaviour
 
                 attempts++;
             }
-            
+
             if (!placed)
             {
                 Debug.LogWarning("Could not place object without overlapping after 10 attempts. Skipping this object.");
