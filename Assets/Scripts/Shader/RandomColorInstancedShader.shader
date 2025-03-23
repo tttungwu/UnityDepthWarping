@@ -6,6 +6,8 @@ Shader "Unlit/RandomColorInstancedShader"
         Pass
         {
             Name "ForwardUnlit"
+            ZWrite On
+            
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
