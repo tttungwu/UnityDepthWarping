@@ -128,12 +128,12 @@ namespace Core.IndirectDraw
                 cullingMethod.Cull(cullResultMatrix);
                 cullResultMatrix = cullingMethod.GetVisibleMatrices();
             }
-            
-            // test frustum culling
-            _args[1] = (uint)cullResultMatrix.Length;
-            _argsBuffer.SetData(_args);
-            _matrixBuffer.SetData(cullResultMatrix);
-            Debug.Log(_args[1]);
+            //
+            // // test frustum culling
+            // _args[1] = (uint)cullResultMatrix.Length;
+            // _argsBuffer.SetData(_args);
+            // _matrixBuffer.SetData(cullResultMatrix);
+            // Debug.Log(_args[1]);
         }
 
         void OnDestroy()

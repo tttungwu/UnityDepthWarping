@@ -33,7 +33,6 @@ Shader "Unlit/RandomColorInstancedShader"
                 void setup()
                 {
                     unity_ObjectToWorld = instanceMatrix[unity_InstanceID];
-                    
                 }
             #endif
 

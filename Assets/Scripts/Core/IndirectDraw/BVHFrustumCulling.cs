@@ -81,10 +81,10 @@ namespace Core.IndirectDraw
             if (count == 0 || bounds == null || indices == null) return null;
             
             BVHNode node = new BVHNode();
-            node.bounds = bounds[start];
+            node.bounds = bounds[indices[start]];
             for (int i = start + 1; i < start + count; i++)
             {
-                node.bounds.Encapsulate(bounds[i]);
+                node.bounds.Encapsulate(bounds[indices[i]]);
             }
             
             if (count <= leafThreshold)
