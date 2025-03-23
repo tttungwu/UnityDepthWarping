@@ -94,10 +94,6 @@ public class InstanceRenderer : MonoBehaviour
     {
         if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null)) return;
         
-        Debug.Log(instanceData.mesh);
-        Debug.Log(instanceData.material);
-        Debug.Log(instanceData.matrices);
-        Debug.Log(renderBounds);
         Graphics.DrawMeshInstancedIndirect(
             instanceData.mesh,
             0,
