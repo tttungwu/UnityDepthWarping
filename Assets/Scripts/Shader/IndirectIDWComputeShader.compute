@@ -1,0 +1,235 @@
+#pragma enable_d3d11_debug_symbols
+#pragma use_dxc
+
+#pragma kernel GetMotionVector
+#pragma kernel GenerateMinMaxMipmap
+#pragma kernel BackwardSearch
+#pragma kernel GenerateMaxMipmap
+#pragma kernel ComputeVisibility
+
+// motion vector kernel
+RWTexture2D<float4> ForwardWarpingDepthTexture;
+RWTexture2D<float4> MotionVector;
+Texture2D<float> PrevDepthTexture;
+float4x4 PrevProjectionMatrix;
+float4x4 InversedPrevProjectionViewMatrix;
+float4x4 CurrentProjectionViewMatrix;
+float FarClipPlane, NearClipPlane;
+
+// min-max mipmap kernel
+RWTexture2D<float4> MinmaxMipmapLayerSrc;
+RWTexture2D<float4> MinmaxMipmapLayerDst;
+
+// backward search kernel
+RWTexture2D<float> BackwardWarpingDepthTexture;
+Texture2D<float4> MotionVectorAndPredictedDepthTexture;
+Texture2D<float4> MipmapMotionVectorsTexture;
+SamplerState sampler_linear_clamp;
+int MaxMipmapLevel, Width, Height;
+// hyperparameter in backward search
+int MaxBoundIter;
+int SeedNum;
+int MaxSearchIter;
+float Threshold;
+
+// max mipmap kernel and NBuffer kernel
+RWTexture2D<float> PrevYMapBuffer;
+RWTexture2D<float> CurYMapBuffer;
+int YMapWidth, YMapHeight;
+
+// compute visibility kernel
+int ObjectNum;
+int YMapMipmapMaxLevel;
+Texture2D<float> YMapMipmapBuffer;
+
+// Constant
+static const float FLT_MAX = 3.4028235e+38;
+
+[numthreads(8, 8, 1)]
+void GetMotionVector(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    PrevDepthTexture.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    float depth = -PrevProjectionMatrix[2][2] + PrevProjectionMatrix[2][3] / ((FarClipPlane * NearClipPlane) / (NearClipPlane + PrevDepthTexture[id.xy] * (FarClipPlane - NearClipPlane)));
+    float4 clipSpacePos = float4(
+        (float)id.x / width * 2.0 - 1.0,
+        (float)id.y / height * 2.0 - 1.0,
+        depth,                            
+        1.0                            
+    );
+    
+    float4 worldPos = mul(InversedPrevProjectionViewMatrix, clipSpacePos);
+    worldPos /= worldPos.w;
+    ForwardWarpingDepthTexture[id.xy] = worldPos;
+    float4 currentClipPos = mul(CurrentProjectionViewMatrix, worldPos);
+    currentClipPos /= currentClipPos.w;
+    
+    float2 currentPixel = float2(
+        (currentClipPos.x + 1.0) * 0.5 * width,
+        (currentClipPos.y + 1.0) * 0.5 * height
+    );
+    
+    float2 diff = currentPixel - float2(id.x, id.y);
+    ForwardWarpingDepthTexture[id.xy] = float4(diff, (currentClipPos.z + 1.0) * 0.5, 0.0);
+    MotionVector[id.xy] = float4(diff, diff);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateMinMaxMipmap(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    MinmaxMipmapLayerDst.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+    int srcX = id.x * 2;
+    int srcY = id.y * 2;
+    float4 val0 = MinmaxMipmapLayerSrc[int2(srcX, srcY)];
+    float4 val1 = MinmaxMipmapLayerSrc[int2(srcX + 1, srcY)];
+    float4 val2 = MinmaxMipmapLayerSrc[int2(srcX, srcY + 1)];
+    float4 val3 = MinmaxMipmapLayerSrc[int2(srcX + 1, srcY + 1)];
+    float2 minXY = min(min(val0.xy, val1.xy), min(val2.xy, val3.xy));
+    float2 maxZW = max(max(val0.zw, val1.zw), max(val2.zw, val3.zw));
+    MinmaxMipmapLayerDst[id.xy] = float4(minXY, maxZW);
+}
+
+float4 GetMipmapDepth(float2 p, int lod)
+{
+    if (lod < 0 || lod > MaxMipmapLevel) return float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+    return MipmapMotionVectorsTexture.SampleLevel(sampler_linear_clamp, p / float2(Width, Height), MaxMipmapLevel);
+}
+
+bool ValidMotionBound(float4 motion)
+{
+    return motion.x != FLT_MAX && motion.y != FLT_MAX && motion.z != -FLT_MAX && motion.w != -FLT_MAX;
+}
+
+float4 GetLocalMotionBound(float4 b)
+{
+    float4 m = float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+    int LOD = int(min(ceil(max(0.0f, log2(max(b.z - b.x, b.w - b.y)))), MaxMipmapLevel));
+    float2 p[4] = {b.xy, b.xw, b.zy, b.zw};
+    for (int i = 0; i < 4; ++ i)
+    {
+        float4 s = GetMipmapDepth(p[i], LOD);
+        if (!ValidMotionBound(s)) continue;
+        m = float4(min(m.xy, s.xy), max(m.zw, s.zw));
+    }
+    return m;
+}
+
+float4 GetMotionBound(float2 p)
+{
+    float4 b = GetMipmapDepth(float2(0, 0), MaxMipmapLevel);
+    for (int k = 0; k < MaxBoundIter; ++ k)
+    {
+        float4 m = GetLocalMotionBound(float4(p - b.zw, p - b.xy));
+        if (!ValidMotionBound(m)) break;
+        b = m;
+    }
+    return b;
+}
+
+float rand(uint seed)
+{
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return float(seed) / 0x7fffffff;
+}
+
+float2 GetSamplePoint(float4 bound, uint id)
+{
+    float rx = rand(id);
+    float ry = rand(id + 1);
+    float x = lerp(bound.x, bound.z, rx);
+    float y = lerp(bound.y, bound.w, ry);
+    return float2(x, y);
+}
+
+float FixedPointIteration(float2 p, float2 v0)
+{
+    float2 q = p - v0;
+    float4 s = MotionVectorAndPredictedDepthTexture.SampleLevel(sampler_linear_clamp, q / float2(Width, Height), 0);
+    for (int k = 0; k < MaxBoundIter && s.z < 1.0f; ++ k)
+    {
+        float2 w = p - s.xy;
+        if (distance(q, w) < Threshold) return s.z;
+        q = w;
+        s = MotionVectorAndPredictedDepthTexture.SampleLevel(sampler_linear_clamp, q / float2(Width, Height), 0);
+    }
+    return 1.0f;
+}
+
+[numthreads(8, 8, 1)]
+void BackwardSearch(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    MotionVectorAndPredictedDepthTexture.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+
+    float4 bound = GetMotionBound(float2(id.xy));
+    float predictedDepth = 1.0f;
+    for (int i = 0; i < SeedNum; ++ i)
+    {
+        float d = FixedPointIteration(float2(id.xy), GetSamplePoint(bound, i));
+        if (d < 0) d = 1.0f;
+        predictedDepth = min(predictedDepth, d);
+    }
+    BackwardWarpingDepthTexture[id.xy] = predictedDepth;
+}
+
+[numthreads(8, 8, 1)]
+void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= YMapWidth || id.y >= YMapHeight) return;
+    int srcX = id.x * 2;
+    int srcY = id.y * 2;
+    CurYMapBuffer[id.xy] = max(max(max(PrevYMapBuffer[int2(srcX, srcY)], PrevYMapBuffer[int2(srcX + 1, srcY)]),
+        PrevYMapBuffer[int2(srcX, srcY + 1)]),
+        PrevYMapBuffer[int2(srcX + 1, srcY + 1)]);
+}
+
+[numthreads(64, 1, 1)]
+void ComputeVisibility(uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x;
+    if (index >= ObjectNum) return;
+    // cast AABB to clip space
+    float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
+    float4 vertices[8];
+    vertices[0] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[1] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[2] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[3] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[4] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[5] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[6] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
+    vertices[7] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
+    // WOC
+    float OccludeeMinDepth = 1.0f;
+    float2 LowLeft = float2(1, 1) * FLT_MAX;
+    float2 UpRight = float2(-1, -1) * FLT_MAX;
+    for (int i = 0; i < 8; ++ i)
+    {
+        vertices[i] /= vertices[i].w;
+        vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
+        vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
+        vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
+        OccludeeMinDepth = min(OccludeeMinDepth, clamp(vertices[i].z, 0.0f, 1.0f));
+        LowLeft = min(LowLeft, vertices[i].xy);
+        UpRight = max(UpRight, vertices[i].xy);
+    }
+    uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
+    uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
+    int RectWidth = UpRight.x - LowLeft.x + 1;
+    int RectHeight = UpRight.y - LowLeft.y + 1;
+    int LOD = firstbithigh(min(RectWidth, RectHeight));
+    float ScreenSpaceMaxDepth = 0.0f;
+    int Stride = 1 << LOD;
+    for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
+    {
+        for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
+        {
+            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
+        }
+    }
+}
