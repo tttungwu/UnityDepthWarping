@@ -16,19 +16,25 @@ public class InstanceRenderer : MonoBehaviour
 
     void Start()
     {
-        if (instanceData == null || instanceData.matrices == null ||
-            instanceData.mesh == null || instanceData.material == null)
+        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
         {
             Debug.LogError("InstanceDataAsset is not properly configured!");
             return;
         }
 
         InitializeBuffers();
+        InitializeBounds();
         InitializeMaterial();
     }
 
     void InitializeBuffers()
     {
+        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
+        {
+            Debug.LogError("InstanceDataAsset is not properly configured!");
+            return;
+        }
+        
         instanceCount = instanceData.matrices.Length;
         matrixBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16);
         matrixBuffer.SetData(instanceData.matrices);
@@ -43,6 +49,41 @@ public class InstanceRenderer : MonoBehaviour
         argsBuffer.SetData(args);
     }
 
+    void InitializeBounds()
+    {
+        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
+        {
+            Debug.LogError("InstanceDataAsset is not properly configured!");
+            return;
+        }
+
+        Bounds localBounds = instanceData.mesh.bounds;
+        Vector3 min = localBounds.min;
+        Vector3 max = localBounds.max;
+
+        Vector3[] localCorners = new Vector3[8]
+        {
+            new Vector3(min.x, min.y, min.z),
+            new Vector3(min.x, min.y, max.z),
+            new Vector3(min.x, max.y, min.z),
+            new Vector3(min.x, max.y, max.z),
+            new Vector3(max.x, min.y, min.z),
+            new Vector3(max.x, min.y, max.z),
+            new Vector3(max.x, max.y, min.z),
+            new Vector3(max.x, max.y, max.z)
+        };
+
+        renderBounds = new Bounds();
+        foreach (Matrix4x4 matrix in instanceData.matrices)
+        {
+            foreach (Vector3 localCorner in localCorners)
+            {
+                Vector3 worldCorner = matrix.MultiplyPoint3x4(localCorner);
+                renderBounds.Encapsulate(worldCorner);
+            }
+        }
+    }
+
     void InitializeMaterial()
     {
         instanceMatrixBufferId = Shader.PropertyToID("instanceMatrix");
@@ -51,7 +92,7 @@ public class InstanceRenderer : MonoBehaviour
     
     void Update()
     {
-        if (instanceData != null && instanceData.mesh != null && instanceData.material != null)
+        if (instanceData && instanceData.mesh && instanceData.material)
         {
             Graphics.DrawMeshInstancedIndirect(
                 instanceData.mesh,
@@ -63,7 +104,7 @@ public class InstanceRenderer : MonoBehaviour
         }
     }
 
-    void OnDisable()
+    void OnDestroy()
     {
         argsBuffer?.Release();
         argsBuffer = null;
