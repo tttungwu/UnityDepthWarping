@@ -111,7 +111,7 @@ namespace Core.IndirectDraw
             return node;
         }
 
-        public override void Cull(Matrix4x4[] matrices = null)
+        public override void Cull(Matrix4x4[] matrices = null, ComputeBuffer cullResultBuffer = null)
         {
             Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(_camera);
             FrustumCullRecursive(_rootNode, frustumPlanes);

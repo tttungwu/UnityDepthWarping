@@ -20,8 +20,7 @@ namespace Core.IndirectDraw
         private RenderTexture _forwardWarpingDepthTexture;
         private RenderTexture _backwardWarpingDepthTexture;
         private RenderTexture _motionVectorsTexture;
-        private ComputeBuffer _boundingBoxesBuffer;
-        private ComputeBuffer _visibilityBuffer;
+        private ComputeBuffer _matrixBuffer;
         private int _yMapMipmapLevel, _yMapMipmapWidth;
         private int _objectNum;
         private Matrix4x4 _prevProjectionMatrix, _prevViewMatrix, _curProjectionMatrix, _curViewMatrix;
@@ -65,11 +64,13 @@ namespace Core.IndirectDraw
         private static readonly int CurYMapBufferShaderPropertyID = Shader.PropertyToID("CurYMapBuffer");
         private static readonly int YMapWidthShaderPropertyID = Shader.PropertyToID("YMapWidth");
         private static readonly int YMapHeightShaderPropertyID = Shader.PropertyToID("YMapHeight");
-        private static readonly int BoundingBoxesShaderPropertyID = Shader.PropertyToID("BoundingBoxes");
-        private static readonly int VisibilityShaderPropertyID = Shader.PropertyToID("Visibility");
         private static readonly int ObjectNumShaderPropertyID = Shader.PropertyToID("ObjectNum");
         private static readonly int YMapMipmapMaxLevelShaderPropertyID = Shader.PropertyToID("YMapMipmapMaxLevel");
         private static readonly int YMapMipmapBufferShaderPropertyID = Shader.PropertyToID("YMapMipmapBuffer");
+        private static readonly int CullResultBufferShaderPropertyID = Shader.PropertyToID("CullResultBuffer");
+        private static readonly int ModelMatrixBufferShaderPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
+        private static readonly int BoundsMinShaderPropertyID = Shader.PropertyToID("BoundsMin");
+        private static readonly int BoundsMaxShaderPropertyID = Shader.PropertyToID("BoundsMax");
         
 #if DEBUGPRINT
         private int fileCount = 0;
@@ -131,9 +132,11 @@ namespace Core.IndirectDraw
             _backwardKernel = _IDWComputeShader.FindKernel("BackwardSearch");
             _maxMipmapKernel = _IDWComputeShader.FindKernel("GenerateMaxMipmap");
             _computeVisibilityKernel = _IDWComputeShader.FindKernel("ComputeVisibility");
+            
+            _matrixBuffer = new ComputeBuffer(matrices.Length, sizeof(float) * 16);
         }
         
-        public override void Cull(Matrix4x4[] matrices)
+        public override void Cull(Matrix4x4[] matrices, ComputeBuffer cullResultBuffer)
         {
             if (skipFrameCount > 0) --skipFrameCount;
             else
@@ -191,12 +194,17 @@ namespace Core.IndirectDraw
                     curWidth = nextWidth;
                     curHeight = nextHeight;
                 }
+                // set data
+                _objectNum = matrices.Length;
+                _matrixBuffer.SetData(matrices);
                 // cull object
-                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, BoundingBoxesShaderPropertyID, _boundingBoxesBuffer);
-                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, VisibilityShaderPropertyID, _visibilityBuffer);
+                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
+                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
                 _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
                 _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
                 _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
+                _IDWComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
+                _IDWComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
                 _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
                 _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
                 _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);

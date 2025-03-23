@@ -9,7 +9,7 @@ namespace Core.IndirectDraw
         
         }
         
-        public virtual void Cull(Matrix4x4[] matrices = null)
+        public virtual void Cull(Matrix4x4[] matrices = null, ComputeBuffer cullResultBuffer = null)
         {
         
         }

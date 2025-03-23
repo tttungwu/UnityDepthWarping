@@ -40,7 +40,10 @@ int YMapWidth, YMapHeight;
 // compute visibility kernel
 int ObjectNum;
 int YMapMipmapMaxLevel;
+float4 BoundsMin, BoundsMax;
 Texture2D<float> YMapMipmapBuffer;
+StructuredBuffer<float4x4> ModelMatrixBuffer;
+AppendStructuredBuffer<float4x4> CullResultBuffer;
 
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
@@ -194,16 +197,17 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     int index = id.x;
     if (index >= ObjectNum) return;
     // cast AABB to clip space
-    float3 bottomLeft = BoundingBoxes[index].bottomLeft, upRight = BoundingBoxes[index].upRight;
+    float4x4 MVPmatrix = CurrentProjectionViewMatrix * ModelMatrixBuffer[index];
+    float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
     float4 vertices[8];
-    vertices[0] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
-    vertices[1] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
-    vertices[2] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
-    vertices[3] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
-    vertices[4] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
-    vertices[5] = mul(CurrentProjectionViewMatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
-    vertices[6] = mul(CurrentProjectionViewMatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
-    vertices[7] = mul(CurrentProjectionViewMatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
+    vertices[0] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[1] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[2] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[3] = mul(MVPmatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[4] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[5] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[6] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
+    vertices[7] = mul(MVPmatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
     // WOC
     float OccludeeMinDepth = 1.0f;
     float2 LowLeft = float2(1, 1) * FLT_MAX;
@@ -232,4 +236,5 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
             ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
         }
     }
+    if (ScreenSpaceMaxDepth > OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }

@@ -107,6 +107,7 @@ namespace Core.IndirectDraw
         {
             if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null)) return;
             
+            _cullResultBuffer.SetCounterValue(0);
             OcclussionCulling();
             Graphics.DrawMeshInstancedIndirect(
                 instanceData.mesh,
