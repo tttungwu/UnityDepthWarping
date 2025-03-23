@@ -1,3 +1,5 @@
+// #define BVHFRUSTUMCULLINGDEBUG
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,6 +21,7 @@ namespace Core.IndirectDraw
         private Camera _camera;
         private Mesh _mesh;
         private Matrix4x4[] _matrices;
+        private Bounds[] _instanceBounds;
         [SerializeField] private int leafThreshold = 4;
 
         public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
@@ -32,7 +35,7 @@ namespace Core.IndirectDraw
             _camera = cam;
             _mesh = mesh;
             _matrices = matrices;
-            Bounds[] instanceBounds = new Bounds[matrices.Length];
+            _instanceBounds = new Bounds[matrices.Length];
             int[] indices = new int[matrices.Length];
             
             for (int i = 0; i < matrices.Length; i++)
@@ -55,21 +58,22 @@ namespace Core.IndirectDraw
 
                 Vector3 min = objectToWorld.MultiplyPoint(localCorners[0]);
                 Vector3 max = min;
-    
+                
                 for (int j = 1; j < 8; j++)
                 {
                     Vector3 worldCorner = objectToWorld.MultiplyPoint(localCorners[j]);
                     min = Vector3.Min(min, worldCorner);
                     max = Vector3.Max(max, worldCorner);
                 }
-
+                
                 Vector3 center = (min + max) * 0.5f;
                 Vector3 size = max - min;
-                instanceBounds[i] = new Bounds(center, size);
+                _instanceBounds[i] = new Bounds(center, size);
+                
                 indices[i] = i;
             }
             
-            _rootNode = BuildBVHRecursive(instanceBounds, indices, 0, indices.Length);
+            _rootNode = BuildBVHRecursive(_instanceBounds, indices, 0, indices.Length);
         }
         
         private BVHNode BuildBVHRecursive(Bounds[] bounds, int[] indices, int start, int count)
@@ -77,33 +81,27 @@ namespace Core.IndirectDraw
             if (count == 0 || bounds == null || indices == null) return null;
             
             BVHNode node = new BVHNode();
+            node.bounds = bounds[start];
+            for (int i = start + 1; i < start + count; i++)
+            {
+                node.bounds.Encapsulate(bounds[i]);
+            }
+            
             if (count <= leafThreshold)
             {
                 node.indices = new int[count];
                 System.Array.Copy(indices, start, node.indices, 0, count);
-                node.bounds = bounds[start];
-                for (int i = start + 1; i < start + count; i++)
-                {
-                    node.bounds.Encapsulate(bounds[i]);
-                }
                 return node;
             }
 
-            Bounds nodeBounds = bounds[start];
-            for (int i = start + 1; i < start + count; i++)
-            {
-                nodeBounds.Encapsulate(bounds[i]);
-            }
-            node.bounds = nodeBounds;
-
-            Vector3 size = nodeBounds.size;
+            Vector3 size = node.bounds.size;
             int axis = 0;
             if (size.y > size.x && size.y > size.z) axis = 1;
             else if (size.z > size.x && size.z > size.y) axis = 2;
 
             System.Array.Sort(indices, start, count, Comparer<int>.Create((a, b) => 
                 bounds[a].center[axis].CompareTo(bounds[b].center[axis])));
-
+            
             int mid = count / 2;
             node.left = BuildBVHRecursive(bounds, indices, start, mid);
             node.right = BuildBVHRecursive(bounds, indices, start + mid, count - mid);
@@ -154,6 +152,10 @@ namespace Core.IndirectDraw
                 for (int i = 0; i < node.indices.Length && visibleCount < visibleMatrices.Length; i++)
                 {
                     visibleMatrices[visibleCount] = _matrices[node.indices[i]];
+#if BVHFRUSTUMCULLINGDEBUG
+                    Debug.Log(_instanceBounds[node.indices[i]]);
+                    DrawBounds(_instanceBounds[node.indices[i]], Color.green);
+#endif
                     visibleCount++;
                 }
                 return;
@@ -162,36 +164,43 @@ namespace Core.IndirectDraw
             CollectVisibleMatrices(node.left, visibleMatrices, ref visibleCount);
             CollectVisibleMatrices(node.right, visibleMatrices, ref visibleCount);
         }
-        
-        public override Matrix4x4[] GetInvisibleMatrices()
+#if BVHFRUSTUMCULLINGDEBUG
+        private void DrawBounds(Bounds bounds, Color color)
         {
-            if (_rootNode == null || _matrices == null) return null;
-
-            Matrix4x4[] invisibleMatrices = new Matrix4x4[_matrices.Length];
-            int invisibleCount = 0;
-            CollectInvisibleMatrices(_rootNode, invisibleMatrices, ref invisibleCount);
-
-            Matrix4x4[] result = new Matrix4x4[invisibleCount];
-            System.Array.Copy(invisibleMatrices, result, invisibleCount);
-            return result;
+            Vector3[] corners = GetCorners(bounds);
+    
+            Debug.DrawLine(corners[0], corners[1], color);
+            Debug.DrawLine(corners[1], corners[3], color);
+            Debug.DrawLine(corners[3], corners[2], color);
+            Debug.DrawLine(corners[2], corners[0], color);
+    
+            Debug.DrawLine(corners[4], corners[5], color);
+            Debug.DrawLine(corners[5], corners[7], color);
+            Debug.DrawLine(corners[7], corners[6], color);
+            Debug.DrawLine(corners[6], corners[4], color);
+    
+            Debug.DrawLine(corners[0], corners[4], color);
+            Debug.DrawLine(corners[1], corners[5], color);
+            Debug.DrawLine(corners[2], corners[6], color);
+            Debug.DrawLine(corners[3], corners[7], color);
         }
-        
-        private void CollectInvisibleMatrices(BVHNode node, Matrix4x4[] invisibleMatrices, ref int invisibleCount)
-        {
-            if (node == null) return;
 
-            if (!node.visible && node.isLeaf)
+        private Vector3[] GetCorners(Bounds bounds)
+        {
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            return new Vector3[]
             {
-                for (int i = 0; i < node.indices.Length && invisibleCount < invisibleMatrices.Length; i++)
-                {
-                    invisibleMatrices[invisibleCount] = _matrices[node.indices[i]];
-                    invisibleCount++;
-                }
-                return;
-            }
-
-            CollectInvisibleMatrices(node.left, invisibleMatrices, ref invisibleCount);
-            CollectInvisibleMatrices(node.right, invisibleMatrices, ref invisibleCount);
+                new Vector3(min.x, min.y, min.z), 
+                new Vector3(min.x, min.y, max.z), 
+                new Vector3(min.x, max.y, min.z),
+                new Vector3(min.x, max.y, max.z),
+                new Vector3(max.x, min.y, min.z),
+                new Vector3(max.x, min.y, max.z),
+                new Vector3(max.x, max.y, min.z),
+                new Vector3(max.x, max.y, max.z) 
+            };
         }
+#endif
     }
 }
