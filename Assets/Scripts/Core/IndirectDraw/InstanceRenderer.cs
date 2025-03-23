@@ -28,7 +28,8 @@ namespace Core.IndirectDraw
 
             InitializeBuffers();
             InitializeBounds();
-            InitializeMaterial();
+            InitializeMaterials();
+            InitializeCullingMethods();
         }
 
         void InitializeBuffers()
@@ -88,16 +89,25 @@ namespace Core.IndirectDraw
             }
         }
 
-        void InitializeMaterial()
+        void InitializeMaterials()
         {
             _instanceMatrixBufferId = Shader.PropertyToID("instanceMatrix");
             instanceData.material.SetBuffer(_instanceMatrixBufferId, _matrixBuffer);
+        }
+
+        void InitializeCullingMethods()
+        {
+            foreach (CullingMethod cullingMethod in cullingMethods)
+            {
+                cullingMethod.Init(camera, instanceData.mesh, instanceData.matrices);
+            }
         }
         
         void Update()
         {
             if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null)) return;
             
+            OcclussionCulling();
             Graphics.DrawMeshInstancedIndirect(
                 instanceData.mesh,
                 0,
@@ -105,6 +115,21 @@ namespace Core.IndirectDraw
                 _renderBounds,
                 _argsBuffer
             );
+        }
+
+        void OcclussionCulling()
+        {
+            Matrix4x4[] cullResultMatrix = null;
+            foreach (var cullingMethod in cullingMethods)
+            {
+                cullingMethod.Cull(cullResultMatrix);
+                cullResultMatrix = cullingMethod.GetVisibleMatrices();
+            }
+            
+            // test frustum culling
+            _args[1] = (uint)cullResultMatrix.Length;
+            _argsBuffer.SetData(_args);
+            _matrixBuffer.SetData(cullResultMatrix);
         }
 
         void OnDestroy()

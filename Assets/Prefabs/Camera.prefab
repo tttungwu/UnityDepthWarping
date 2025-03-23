@@ -19,7 +19,7 @@ GameObject:
   - component: {fileID: 1520948633258882963}
   - component: {fileID: 6910998603079872911}
   m_Layer: 0
-  m_Name: CameraWithRecorder
+  m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -235,4 +235,3 @@ MonoBehaviour:
   maxBoundIter: 3
   maxSearchIter: 3
   threshold: 0.5
-  yMapMipmapCount: 3
