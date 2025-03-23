@@ -16,7 +16,7 @@ public class InstanceRenderer : MonoBehaviour
 
     void Start()
     {
-        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
+        if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null))
         {
             Debug.LogError("InstanceDataAsset is not properly configured!");
             return;
@@ -29,7 +29,7 @@ public class InstanceRenderer : MonoBehaviour
 
     void InitializeBuffers()
     {
-        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
+        if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null))
         {
             Debug.LogError("InstanceDataAsset is not properly configured!");
             return;
@@ -51,7 +51,7 @@ public class InstanceRenderer : MonoBehaviour
 
     void InitializeBounds()
     {
-        if (instanceData == null || instanceData.matrices == null || instanceData.mesh == null || instanceData.material == null)
+        if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null))
         {
             Debug.LogError("InstanceDataAsset is not properly configured!");
             return;
@@ -92,16 +92,19 @@ public class InstanceRenderer : MonoBehaviour
     
     void Update()
     {
-        if (instanceData && instanceData.mesh && instanceData.material)
-        {
-            Graphics.DrawMeshInstancedIndirect(
-                instanceData.mesh,
-                0,
-                instanceData.material,
-                renderBounds,
-                argsBuffer
-            );
-        }
+        if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null)) return;
+        
+        Debug.Log(instanceData.mesh);
+        Debug.Log(instanceData.material);
+        Debug.Log(instanceData.matrices);
+        Debug.Log(renderBounds);
+        Graphics.DrawMeshInstancedIndirect(
+            instanceData.mesh,
+            0,
+            instanceData.material,
+            renderBounds,
+            argsBuffer
+        );
     }
 
     void OnDestroy()
