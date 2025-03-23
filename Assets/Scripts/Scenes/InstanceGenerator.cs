@@ -109,7 +109,7 @@ public class RandomInstanceGenerator : EditorWindow
         instanceDataAsset.material = selectedMaterial;
         instanceDataAsset.mesh = selectedMesh;
 
-        string path = $"Assets/Prefabs/Matrix/{assetName}.asset";
+        string path = $"Assets/Prefabs/Instances/{assetName}.asset";
         AssetDatabase.CreateAsset(instanceDataAsset, path);
         AssetDatabase.SaveAssets();
 
