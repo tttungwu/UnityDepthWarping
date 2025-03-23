@@ -6,6 +6,7 @@ namespace Core.IndirectDraw
     {
         [SerializeField] private Camera camera;
         [SerializeField] private InstanceDataAsset instanceData;
+        [SerializeField] private bool enableCulling = true;
         [SerializeField] private CullingMethod[] cullingMethods;
         
         private ComputeBuffer _argsBuffer;
@@ -107,10 +108,14 @@ namespace Core.IndirectDraw
         {
             if (!(instanceData && instanceData.mesh && instanceData.material && instanceData.matrices != null)) return;
             
-            _cullResultBuffer.SetCounterValue(0);
-            OcclussionCulling();
-            // instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
-            // ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
+            if (enableCulling)
+            {
+                _cullResultBuffer.SetCounterValue(0);
+                OcclussionCulling();
+                instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
+                ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
+            }
+            
             Graphics.DrawMeshInstancedIndirect(
                 instanceData.mesh,
                 0,
@@ -125,11 +130,11 @@ namespace Core.IndirectDraw
             Matrix4x4[] cullResultMatrix = null;
             foreach (var cullingMethod in cullingMethods)
             {
-                cullingMethod.Cull(cullResultMatrix);
+                cullingMethod.Cull(cullResultMatrix, _cullResultBuffer);
                 cullResultMatrix = cullingMethod.GetVisibleMatrices();
             }
-            //
-            // // test frustum culling
+            
+            // test frustum culling
             // _args[1] = (uint)cullResultMatrix.Length;
             // _argsBuffer.SetData(_args);
             // _matrixBuffer.SetData(cullResultMatrix);

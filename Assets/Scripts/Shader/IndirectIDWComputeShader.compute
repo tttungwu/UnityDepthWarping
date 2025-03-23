@@ -218,7 +218,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
         vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
         vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
         vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
-        OccludeeMinDepth = min(OccludeeMinDepth, clamp(vertices[i].z, 0.0f, 1.0f));
+        OccludeeMinDepth = min(OccludeeMinDepth, vertices[i].z);
         LowLeft = min(LowLeft, vertices[i].xy);
         UpRight = max(UpRight, vertices[i].xy);
     }

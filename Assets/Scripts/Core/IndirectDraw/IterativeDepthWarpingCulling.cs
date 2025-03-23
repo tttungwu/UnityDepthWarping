@@ -1,7 +1,9 @@
 // #define DEBUGPRINT
 // #define EVALUATE
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Features;
 using UnityEngine;
@@ -82,6 +84,7 @@ namespace Core.IndirectDraw
         
         public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
         {
+            _mesh = mesh;
             _camera = cam;
             _camera.depthTextureMode = DepthTextureMode.Depth;
             _nearClipPlane = _camera.nearClipPlane;
