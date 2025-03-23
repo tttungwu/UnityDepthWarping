@@ -130,6 +130,7 @@ namespace Core.IndirectDraw
             _args[1] = (uint)cullResultMatrix.Length;
             _argsBuffer.SetData(_args);
             _matrixBuffer.SetData(cullResultMatrix);
+            Debug.Log(_args[1]);
         }
 
         void OnDestroy()

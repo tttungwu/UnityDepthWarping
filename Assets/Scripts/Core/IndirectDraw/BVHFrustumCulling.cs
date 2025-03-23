@@ -39,7 +39,7 @@ namespace Core.IndirectDraw
             {
                 Matrix4x4 objectToWorld = matrices[i];
     
-                Bounds meshBounds = mesh.bounds;
+                Bounds meshBounds = _mesh.bounds;
                 Vector3 extents = meshBounds.extents;
                 Vector3[] localCorners = new Vector3[8]
                 {
@@ -72,7 +72,7 @@ namespace Core.IndirectDraw
             _rootNode = BuildBVHRecursive(instanceBounds, indices, 0, indices.Length);
         }
         
-        BVHNode BuildBVHRecursive(Bounds[] bounds, int[] indices, int start, int count)
+        private BVHNode BuildBVHRecursive(Bounds[] bounds, int[] indices, int start, int count)
         {
             if (count == 0 || bounds == null || indices == null) return null;
             
