@@ -68,7 +68,6 @@ public class IterativeDepthWarpingCulling : CullingMethod
     private static readonly int CurYMapBufferShaderPropertyID = Shader.PropertyToID("CurYMapBuffer");
     private static readonly int YMapWidthShaderPropertyID = Shader.PropertyToID("YMapWidth");
     private static readonly int YMapHeightShaderPropertyID = Shader.PropertyToID("YMapHeight");
-    private static readonly int LayerShaderPropertyID = Shader.PropertyToID("Layer");
     private static readonly int BoundingBoxesShaderPropertyID = Shader.PropertyToID("BoundingBoxes");
     private static readonly int VisibilityShaderPropertyID = Shader.PropertyToID("Visibility");
     private static readonly int ObjectNumShaderPropertyID = Shader.PropertyToID("ObjectNum");
