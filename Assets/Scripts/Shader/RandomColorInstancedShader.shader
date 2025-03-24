@@ -1,4 +1,4 @@
-Shader "Unlit/RandomColorInstancedShader"
+Shader "Random/RandomColorInstancedShader"
 {
     SubShader
     {
@@ -7,6 +7,7 @@ Shader "Unlit/RandomColorInstancedShader"
         {
             Name "ForwardUnlit"
             ZWrite On
+            ZTest LEqual
             
             HLSLPROGRAM
             #pragma vertex vert
@@ -59,6 +60,58 @@ Shader "Unlit/RandomColorInstancedShader"
             half4 frag(Varyings IN) : SV_Target
             {
                 return IN.color;
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode"="DepthOnly" }
+            ZWrite On
+            ColorMask 0
+            
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options procedural:setup
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 vertex : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 pos : SV_POSITION;
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+                StructuredBuffer<float4x4> instanceMatrix;
+                
+                void setup()
+                {
+                    unity_ObjectToWorld = instanceMatrix[unity_InstanceID];
+                }
+            #endif
+
+            Varyings vert(Attributes IN)
+            {
+                Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+                float4 worldPos = mul(unity_ObjectToWorld, IN.vertex);
+                OUT.pos = mul(UNITY_MATRIX_VP, worldPos);
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                return 0;
             }
             ENDHLSL
         }
