@@ -32,7 +32,7 @@ float Threshold;
 // max mipmap kernel and NBuffer kernel
 RWTexture2D<float> PrevYMapBuffer;
 RWTexture2D<float> CurYMapBuffer;
-int YMapWidth, YMapHeight;
+uint YMapWidth, YMapHeight;
 
 // compute visibility kernel
 int ObjectNum;

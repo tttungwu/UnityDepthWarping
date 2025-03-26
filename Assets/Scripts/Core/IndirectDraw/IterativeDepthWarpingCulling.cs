@@ -232,6 +232,12 @@ namespace Core.IndirectDraw
             _prevProjectionMatrix = _curProjectionMatrix;
         }
         
+        void OnDestroy()
+        {
+            _matrixBuffer?.Release();
+            _matrixBuffer = null;
+        }
+        
 #if EVALUATE
         private float GetScreenDepth(float depth)
         {
