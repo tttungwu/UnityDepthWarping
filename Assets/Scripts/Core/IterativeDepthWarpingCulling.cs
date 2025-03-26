@@ -191,50 +191,50 @@ public class IterativeDepthWarpingCulling : CullingMethod
             _IDWComputeShader.SetInt(MaxSearchIterShaderPropertyID, maxSearchIter);
             _IDWComputeShader.SetFloat(ThresholdShaderPropertyID, threshold);
             _IDWComputeShader.Dispatch(_backwardKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
-            // // generate yMaps
-            // for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < _yMapMipmapLevel; ++layer)
-            // {
-            //     int nextWidth = (1 + curWidth) / 2;
-            //     int nextHeight = (1 + curHeight) / 2;
-            //     _IDWComputeShader.SetTexture(_maxMipmapKernel, PrevYMapBufferShaderPropertyID, _backwardWarpingDepthTexture, layer);
-            //     _IDWComputeShader.SetTexture(_maxMipmapKernel, CurYMapBufferShaderPropertyID, _backwardWarpingDepthTexture, layer + 1);
-            //     _IDWComputeShader.SetInt(YMapWidthShaderPropertyID, nextWidth);
-            //     _IDWComputeShader.SetInt(YMapHeightShaderPropertyID, nextHeight);
-            //     _IDWComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
-            //     curWidth = nextWidth;
-            //     curHeight = nextHeight;
-            // }
-            // // set _boundingBoxesBuffer
-            // _objectNum = occludees.Count;
-            // for (int i = 0; i < _objectNum; ++i)
-            // {
-            //     Bounds bound = occludees[i].GetBounds();
-            //     _boundingBoxesData[i * 2] = bound.min;
-            //     _boundingBoxesData[i * 2 + 1] = bound.max;
-            // }
-            // _boundingBoxesBuffer.SetData(_boundingBoxesData);
-            // // cull object
-            // _IDWComputeShader.SetBuffer(_computeVisibilityKernel, BoundingBoxesShaderPropertyID, _boundingBoxesBuffer);
-            // _IDWComputeShader.SetBuffer(_computeVisibilityKernel, VisibilityShaderPropertyID, _visibilityBuffer);
-            // _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
-            // _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
-            // _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
-            // _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
-            // _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
-            // _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);
-            // _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
-            // _visibilityBuffer.GetData(_visibilityOutcome);
-            // int culledByIDW = 0;
-            // for (int i = 0; i < _objectNum; i++)
-            // {
-            //     if (_visibilityOutcome[i] == 0)
-            //     {
-            //         occludees[i].MarkAsOccluded();
-            //         ++culledByIDW;
-            //     }
-            //     else occludees[i].MarkAsVisible();
-            // }
-            // Debug.Log($"input: {_objectNum}; output: {_objectNum - culledByIDW}");
+            // generate yMaps
+            for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < _yMapMipmapLevel; ++layer)
+            {
+                int nextWidth = (1 + curWidth) / 2;
+                int nextHeight = (1 + curHeight) / 2;
+                _IDWComputeShader.SetTexture(_maxMipmapKernel, PrevYMapBufferShaderPropertyID, _backwardWarpingDepthTexture, layer);
+                _IDWComputeShader.SetTexture(_maxMipmapKernel, CurYMapBufferShaderPropertyID, _backwardWarpingDepthTexture, layer + 1);
+                _IDWComputeShader.SetInt(YMapWidthShaderPropertyID, nextWidth);
+                _IDWComputeShader.SetInt(YMapHeightShaderPropertyID, nextHeight);
+                _IDWComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
+                curWidth = nextWidth;
+                curHeight = nextHeight;
+            }
+            // set _boundingBoxesBuffer
+            _objectNum = occludees.Count;
+            for (int i = 0; i < _objectNum; ++i)
+            {
+                Bounds bound = occludees[i].GetBounds();
+                _boundingBoxesData[i * 2] = bound.min;
+                _boundingBoxesData[i * 2 + 1] = bound.max;
+            }
+            _boundingBoxesBuffer.SetData(_boundingBoxesData);
+            // cull object
+            _IDWComputeShader.SetBuffer(_computeVisibilityKernel, BoundingBoxesShaderPropertyID, _boundingBoxesBuffer);
+            _IDWComputeShader.SetBuffer(_computeVisibilityKernel, VisibilityShaderPropertyID, _visibilityBuffer);
+            _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
+            _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
+            _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
+            _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
+            _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
+            _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);
+            _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+            _visibilityBuffer.GetData(_visibilityOutcome);
+            int culledByIDW = 0;
+            for (int i = 0; i < _objectNum; i++)
+            {
+                if (_visibilityOutcome[i] == 0)
+                {
+                    occludees[i].MarkAsOccluded();
+                    ++culledByIDW;
+                }
+                else occludees[i].MarkAsVisible();
+            }
+            Debug.Log($"input: {_objectNum}; output: {_objectNum - culledByIDW}");
 
 #if EVALUATE
             // evaluate
