@@ -193,46 +193,45 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int index = id.x;
     if (index >= ObjectNum) return;
-    CullResultBuffer.Append(ModelMatrixBuffer[index]);
-    // // cast AABB to clip space
-    // float4x4 MVPmatrix = CurrentProjectionViewMatrix * ModelMatrixBuffer[index];
-    // float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
-    // float4 vertices[8];
-    // vertices[0] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
-    // vertices[1] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
-    // vertices[2] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
-    // vertices[3] = mul(MVPmatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
-    // vertices[4] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
-    // vertices[5] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
-    // vertices[6] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
-    // vertices[7] = mul(MVPmatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
-    // // WOC
-    // float OccludeeMinDepth = 1.0f;
-    // float2 LowLeft = float2(1, 1) * FLT_MAX;
-    // float2 UpRight = float2(-1, -1) * FLT_MAX;
-    // for (int i = 0; i < 8; ++ i)
-    // {
-    //     vertices[i] /= vertices[i].w;
-    //     vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
-    //     vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
-    //     vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
-    //     OccludeeMinDepth = min(OccludeeMinDepth, vertices[i].z);
-    //     LowLeft = min(LowLeft, vertices[i].xy);
-    //     UpRight = max(UpRight, vertices[i].xy);
-    // }
-    // uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
-    // uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
-    // int RectWidth = UpRight.x - LowLeft.x + 1;
-    // int RectHeight = UpRight.y - LowLeft.y + 1;
-    // int LOD = firstbithigh(min(RectWidth, RectHeight));
-    // float ScreenSpaceMaxDepth = 0.0f;
-    // int Stride = 1 << LOD;
-    // for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
-    // {
-    //     for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
-    //     {
-    //         ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
-    //     }
-    // }
-    // if (ScreenSpaceMaxDepth > OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
+    // cast AABB to clip space
+    float4x4 MVPmatrix = CurrentProjectionViewMatrix * ModelMatrixBuffer[index];
+    float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
+    float4 vertices[8];
+    vertices[0] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[1] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[2] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[3] = mul(MVPmatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[4] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[5] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[6] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
+    vertices[7] = mul(MVPmatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
+    // WOC
+    float OccludeeMinDepth = 1.0f;
+    float2 LowLeft = float2(1, 1) * FLT_MAX;
+    float2 UpRight = float2(-1, -1) * FLT_MAX;
+    for (int i = 0; i < 8; ++ i)
+    {
+        vertices[i] /= vertices[i].w;
+        vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
+        vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
+        vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
+        OccludeeMinDepth = min(OccludeeMinDepth, vertices[i].z);
+        LowLeft = min(LowLeft, vertices[i].xy);
+        UpRight = max(UpRight, vertices[i].xy);
+    }
+    uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
+    uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
+    int RectWidth = UpRight.x - LowLeft.x + 1;
+    int RectHeight = UpRight.y - LowLeft.y + 1;
+    int LOD = firstbithigh(min(RectWidth, RectHeight));
+    float ScreenSpaceMaxDepth = 0.0f;
+    int Stride = 1 << LOD;
+    for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
+    {
+        for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
+        {
+            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
+        }
+    }
+    if (ScreenSpaceMaxDepth > OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }
