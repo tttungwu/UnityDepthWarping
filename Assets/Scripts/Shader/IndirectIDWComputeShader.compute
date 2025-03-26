@@ -1,6 +1,3 @@
-#pragma enable_d3d11_debug_symbols
-#pragma use_dxc
-
 #pragma kernel GetMotionVector
 #pragma kernel GenerateMinMaxMipmap
 #pragma kernel BackwardSearch
