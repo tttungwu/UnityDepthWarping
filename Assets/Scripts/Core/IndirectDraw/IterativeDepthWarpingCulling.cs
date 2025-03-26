@@ -1,5 +1,5 @@
 // #define DEBUGPRINT
-#define EVALUATE
+// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -201,17 +201,17 @@ namespace Core.IndirectDraw
                 _objectNum = matrices.Length;
                 _matrixBuffer.SetData(matrices);
                 // cull object
-                // _IDWComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
-                // _IDWComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
-                // _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
-                // _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
-                // _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
-                // _IDWComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
-                // _IDWComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
-                // _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
-                // _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
-                // _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);
-                // _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
+                _IDWComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
+                _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
+                _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
+                _IDWComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
+                _IDWComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
+                _IDWComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
+                _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
+                _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);
+                _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
 #if DEBUGPRINT
                 SaveRenderTextureToFile(_prevDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                 ++fileCount;

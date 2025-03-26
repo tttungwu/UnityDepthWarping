@@ -112,8 +112,8 @@ namespace Core.IndirectDraw
             {
                 _cullResultBuffer.SetCounterValue(0);
                 OcclussionCulling();
-                // instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
-                // ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
+                instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
+                ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
             }
             
             Graphics.DrawMeshInstancedIndirect(
