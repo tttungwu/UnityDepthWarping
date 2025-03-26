@@ -14,6 +14,14 @@ namespace Stat
         [SerializeField] private CaptureType captureType = CaptureType.Reference;
         private string savePath = "Assets/Record/";
         
+
+        void Start()
+        {
+            var allCanvases = FindObjectsOfType<Canvas>();
+            foreach (Canvas canvas in allCanvases)
+                if (canvas != null && canvas.enabled) canvas.enabled = false;
+        }
+        
         void Update()
         {
             string filePathPrefix;
