@@ -77,4 +77,4 @@ crashlytics-build.properties
 .vscode/
 
 # Scene
-/Assets/Scenes/
+# /Assets/Scenes/
