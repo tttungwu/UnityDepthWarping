@@ -298,7 +298,7 @@ PrefabInstance:
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: saveDepthInfo
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
