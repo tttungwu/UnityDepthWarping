@@ -42,6 +42,8 @@ Texture2D<float> YMapMipmapBuffer;
 StructuredBuffer<float4x4> ModelMatrixBuffer;
 AppendStructuredBuffer<float4x4> CullResultBuffer;
 
+RWTexture2D<float4> DebugTexture;
+
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
 static const float EPS = 1e-7;
@@ -238,5 +240,6 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
             ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
         }
     }
+    DebugTexture[int2(id.x, 0)] = float4(ScreenSpaceMaxDepth, OccludeeMinDepth, 0.0f, 0.0f);
     if (ScreenSpaceMaxDepth >= OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }

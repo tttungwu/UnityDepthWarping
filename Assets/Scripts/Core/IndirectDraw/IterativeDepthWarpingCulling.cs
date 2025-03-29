@@ -1,4 +1,4 @@
-// #define DEBUGPRINT
+#define DEBUGPRINT
 
 using System;
 using System.Collections.Generic;
@@ -216,6 +216,7 @@ namespace Core.IndirectDraw
                 _IDWComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
                 _IDWComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
                 _IDWComputeShader.SetTexture(_computeVisibilityKernel, YMapMipmapBufferShaderPropertyID, _backwardWarpingDepthTexture);
+                _IDWComputeShader.SetTexture(_computeVisibilityKernel, DebugTextureShaderPropertyID, _debugTexture);
                 _IDWComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
                 _IDWComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
                 _IDWComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
