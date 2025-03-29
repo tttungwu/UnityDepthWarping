@@ -1,5 +1,4 @@
 // #define DEBUGPRINT
-// #define EVALUATE
 
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,17 @@ namespace Core.IndirectDraw
 {
     public class IterativeDepthWarpingCulling : CullingMethod
     {
+        // hyperpparameter
+        [SerializeField] private int skipFrameCount = 5;
+        [Header("backward search")]
+        [SerializeField] private int seedNum = 8;
+        [SerializeField] private int maxBoundIter = 3;
+        [SerializeField] private int maxSearchIter = 3;
+        [SerializeField] private float threshold = 0.5f;
+        
+        [SerializeField] private bool printCullingInfo = false;
+        [SerializeField] private bool saveDepthInfo = false;
+        
         private Camera _camera;
         private float _nearClipPlane, _farClipPlane;
         private Mesh _mesh;
@@ -24,7 +34,7 @@ namespace Core.IndirectDraw
         private RenderTexture _motionVectorsTexture;
         private ComputeBuffer _matrixBuffer;
         private int _yMapMipmapLevel, _yMapMipmapWidth;
-        private int _objectNum;
+        private int _objectNum, _allNum;
         private Matrix4x4 _prevProjectionMatrix, _prevViewMatrix, _curProjectionMatrix, _curViewMatrix;
         
         public ComputeShader _IDWComputeShader;
@@ -34,13 +44,8 @@ namespace Core.IndirectDraw
         private int _maxMipmapKernel;
         private int _computeVisibilityKernel;
         
-        // hyperpparameter
-        public int skipFrameCount = 5;
-        [Header("backward search")]
-        public int seedNum = 8;
-        public int maxBoundIter = 3;
-        public int maxSearchIter = 3;
-        public float threshold = 0.5f;
+        private int predictCount = 0;
+        private int referenceCount = 0;
         
         private static readonly int FarClipPlaneShaderPropertyID = Shader.PropertyToID("FarClipPlane");
         private static readonly int NearClipPlaneShaderPropertyID = Shader.PropertyToID("NearClipPlane");
@@ -77,14 +82,12 @@ namespace Core.IndirectDraw
 #if DEBUGPRINT
         private int fileCount = 0;
 #endif
-#if EVALUATE
-        private int predictCount = 0;
-        private int referenceCount = 0;
-#endif
+        
         
         public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
         {
             _mesh = mesh;
+            _allNum = matrices.Length;
             _camera = cam;
             _camera.depthTextureMode = DepthTextureMode.Depth;
             _nearClipPlane = _camera.nearClipPlane;
@@ -212,19 +215,32 @@ namespace Core.IndirectDraw
                 _IDWComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
                 _IDWComputeShader.SetInt(YMapMipmapMaxLevelShaderPropertyID, _yMapMipmapLevel);
                 _IDWComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+
+                if (printCullingInfo)
+                {
+                    ComputeBuffer countBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
+                    ComputeBuffer.CopyCount(cullResultBuffer, countBuffer, 0);
+                    uint[] countData = new uint[1];
+                    countBuffer.GetData(countData);
+                    countBuffer.Release();
+                    uint actualCount = countData[0];
+                    Debug.Log($"Culled by VFC: {_allNum - _objectNum}");
+                    Debug.Log($"Culled by WOC: {_objectNum - actualCount}");
+                }
+
+                if (saveDepthInfo)
+                {
+                    SaveRenderTextureToBin(_backwardWarpingDepthTexture,
+                        "Assets/Record/Predict/depthData" + predictCount + ".bin", true, false);
+                    ++predictCount;
+                    SaveRenderTextureToBin(_prevDepthTexture,
+                        "Assets/Record/Reference/depthData" + referenceCount + ".bin", false, true);
+                    ++referenceCount;
+                }
+
 #if DEBUGPRINT
                 SaveRenderTextureToFile(_prevDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                 ++fileCount;
-#endif
-
-#if EVALUATE
-                // evaluate
-                SaveRenderTextureToBin(_backwardWarpingDepthTexture,
-                    "Assets/Record/Predict/depthData" + predictCount + ".bin", true, false);
-                ++predictCount;
-                SaveRenderTextureToBin(_prevDepthTexture,
-                    "Assets/Record/Reference/depthData" + referenceCount + ".bin", false, true);
-                ++referenceCount;
 #endif
             }
 
@@ -238,7 +254,6 @@ namespace Core.IndirectDraw
             _matrixBuffer = null;
         }
         
-#if EVALUATE
         private float GetScreenDepth(float depth)
         {
             float z = (_farClipPlane * _nearClipPlane) / (_nearClipPlane + depth * (_farClipPlane - _nearClipPlane));
@@ -282,7 +297,7 @@ namespace Core.IndirectDraw
             RenderTexture.active = currentRT;
             Destroy(tempTexture);
         }
-#endif
+        
 #if DEBUGPRINT
         private void SaveRenderTextureToFile(RenderTexture texture, int mipmapLevel = 0, string filePath = "Assets/Debug/DepthData.txt")
         {
