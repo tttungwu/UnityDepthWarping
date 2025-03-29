@@ -278,7 +278,7 @@ PrefabInstance:
         type: 3}
       propertyPath: instanceData
       value: 
-      objectReference: {fileID: 11400000, guid: 397ee71d599f59b4db3128dd55555aaf,
+      objectReference: {fileID: 11400000, guid: 392941afe0e7c744ca1048aa1a3daa4e,
         type: 2}
     - target: {fileID: 2352012830795828717, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
@@ -298,7 +298,7 @@ PrefabInstance:
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: saveDepthInfo
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}

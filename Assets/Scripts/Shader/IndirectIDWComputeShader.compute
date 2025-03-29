@@ -237,9 +237,8 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     {
         for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
         {
-            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
+            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.Load(int3(i / Stride, j / Stride, LOD)));
         }
     }
-    DebugTexture[int2(id.x, 0)] = float4(ScreenSpaceMaxDepth, OccludeeMinDepth, 0.0f, 0.0f);
     if (ScreenSpaceMaxDepth >= OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }
