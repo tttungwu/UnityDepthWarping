@@ -44,6 +44,7 @@ AppendStructuredBuffer<float4x4> CullResultBuffer;
 
 // Constant
 static const float FLT_MAX = 3.4028235e+38;
+static const float EPS = 1e-7;
 
 [numthreads(8, 8, 1)]
 void GetMotionVector(uint3 id : SV_DispatchThreadID)
@@ -52,7 +53,7 @@ void GetMotionVector(uint3 id : SV_DispatchThreadID)
     PrevDepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
 
-    float depth = -PrevProjectionMatrix[2][2] + PrevProjectionMatrix[2][3] / ((FarClipPlane * NearClipPlane) / (NearClipPlane + PrevDepthTexture[id.xy] * (FarClipPlane - NearClipPlane)));
+    float depth = -PrevProjectionMatrix[2][2] + PrevProjectionMatrix[2][3] * (NearClipPlane + PrevDepthTexture[id.xy] * (FarClipPlane - NearClipPlane)) / (FarClipPlane * NearClipPlane);
     float4 clipSpacePos = float4(
         (float)id.x / width * 2.0 - 1.0,
         (float)id.y / height * 2.0 - 1.0,
@@ -193,6 +194,10 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int index = id.x;
     if (index >= ObjectNum) return;
+    
+    // CullResultBuffer.Append(ModelMatrixBuffer[index]);
+    // return;
+    
     // cast AABB to clip space
     float4x4 MVPmatrix = CurrentProjectionViewMatrix * ModelMatrixBuffer[index];
     float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
@@ -233,5 +238,5 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
             ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.SampleLevel(sampler_linear_clamp, float2(1.0 * i / Width, 1.0 * j / Height), LOD));
         }
     }
-    if (ScreenSpaceMaxDepth > OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
+    if (ScreenSpaceMaxDepth >= OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }
