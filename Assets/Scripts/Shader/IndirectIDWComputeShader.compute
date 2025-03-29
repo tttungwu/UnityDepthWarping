@@ -199,7 +199,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     // return;
     
     // cast AABB to clip space
-    float4x4 MVPmatrix = CurrentProjectionViewMatrix * ModelMatrixBuffer[index];
+    float4x4 MVPmatrix = mul(CurrentProjectionViewMatrix, ModelMatrixBuffer[index]);
     float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
     float4 vertices[8];
     vertices[0] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));

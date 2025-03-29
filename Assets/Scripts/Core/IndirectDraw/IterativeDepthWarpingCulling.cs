@@ -78,9 +78,12 @@ namespace Core.IndirectDraw
         private static readonly int ModelMatrixBufferShaderPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
         private static readonly int BoundsMinShaderPropertyID = Shader.PropertyToID("BoundsMin");
         private static readonly int BoundsMaxShaderPropertyID = Shader.PropertyToID("BoundsMax");
+
         
 #if DEBUGPRINT
         private int fileCount = 0;
+        private RenderTexture _debugTexture;
+        private static readonly int DebugTextureShaderPropertyID = Shader.PropertyToID("DebugTexture");
 #endif
         
         
@@ -132,6 +135,11 @@ namespace Core.IndirectDraw
             _motionVectorsTexture.useMipMap = true;
             _motionVectorsTexture.autoGenerateMips = false;
             _motionVectorsTexture.Create();
+#if DEBUGPRINT
+            _debugTexture = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+            _debugTexture.enableRandomWrite = true;
+            _debugTexture.Create();
+#endif
             
             _motionVectorKernel = _IDWComputeShader.FindKernel("GetMotionVector");
             _minmaxMipmapKernel = _IDWComputeShader.FindKernel("GenerateMinMaxMipmap");
@@ -240,7 +248,7 @@ namespace Core.IndirectDraw
                 }
 
 #if DEBUGPRINT
-                SaveRenderTextureToFile(_prevDepthTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
+                SaveRenderTextureToFile(_debugTexture, 0, "Assets/Debug/DepthData" + fileCount + ".txt");
                 ++fileCount;
 #endif
             }
