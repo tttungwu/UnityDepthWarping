@@ -147,6 +147,7 @@ namespace Core.IndirectDraw
             if (skipFrameCount > 0) --skipFrameCount;
             else
             {
+                if (matrices.Length == 0) return;
                 _curViewMatrix = _camera.worldToCameraMatrix;
                 _curProjectionMatrix = _camera.projectionMatrix;
                 _prevDepthTexture = _depthSaveFeature.GetDepthTexture();
