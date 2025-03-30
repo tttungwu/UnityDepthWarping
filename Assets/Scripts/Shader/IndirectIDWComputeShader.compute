@@ -216,6 +216,7 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     float OccludeeMinDepth = 1.0f;
     float2 LowLeft = float2(1, 1) * FLT_MAX;
     float2 UpRight = float2(-1, -1) * FLT_MAX;
+    [unroll]
     for (int i = 0; i < 8; ++ i)
     {
         vertices[i] /= vertices[i].w;

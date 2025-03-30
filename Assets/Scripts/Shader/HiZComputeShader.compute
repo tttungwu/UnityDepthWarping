@@ -1,0 +1,14 @@
+#pragma kernel GenerateMaxMipmap
+#pragma kernel ComputeVisibility
+
+[numthreads(8, 8, 1)]
+void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
+{
+    
+}
+
+[numthreads(64, 1, 1)]
+void ComputeVisibility(uint3 id : SV_DispatchThreadID)
+{
+    
+}
