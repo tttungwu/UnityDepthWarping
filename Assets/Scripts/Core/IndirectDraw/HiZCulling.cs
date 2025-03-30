@@ -1,5 +1,8 @@
+using System.Reflection;
 using Features;
+using TMPro.Examples;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Core.IndirectDraw
 {
@@ -12,6 +15,8 @@ namespace Core.IndirectDraw
         private DepthSaveFeature _depthSaveFeature;
         private RenderTexture _prevDepthTexture;
         private RenderTexture _depthTexture;
+
+        private int _MipmapWidth, _MipmapLevel;
         
         public ComputeShader HiZComputeShader;
         private int _convertDepthToNDCKernel;
@@ -35,6 +40,50 @@ namespace Core.IndirectDraw
         private static readonly int ModelMatrixBufferPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
         private static readonly int CullResultBufferPropertyID = Shader.PropertyToID("CullResultBuffer");
         
+        public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
+        {
+            _mesh = mesh;
+            _camera = cam;
+            _camera.depthTextureMode = DepthTextureMode.Depth;
+            _nearClipPlane = cam.nearClipPlane;
+            _farClipPlane = cam.farClipPlane;
+            var proInfo = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            if (proInfo != null)
+            {
+                var rendererDataList = (ScriptableRendererData[])proInfo.GetValue(UniversalRenderPipeline.asset);
+                foreach (var rendererData in rendererDataList)
+                {
+                    foreach (var feature in rendererData.rendererFeatures)
+                    {
+                        if (feature is DepthSaveFeature)
+                        {
+                            _depthSaveFeature = (DepthSaveFeature)feature;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Depth save feature not found");
+            }
+            
+            _MipmapWidth = Mathf.NextPowerOfTwo(Mathf.Max(Screen.width, Screen.height));
+            _MipmapLevel = Mathf.FloorToInt(Mathf.Log(_MipmapWidth) / Mathf.Log(2));
+            _depthTexture = new RenderTexture(_MipmapWidth, _MipmapWidth, 0, RenderTextureFormat.RFloat);
+            _depthTexture.enableRandomWrite = true;
+            _depthTexture.useMipMap = true;
+            _depthTexture.autoGenerateMips = false;
+            _depthTexture.Create();
+            
+            _convertDepthToNDCKernel = HiZComputeShader.FindKernel("ConvertDepthToNDC");
+            _maxMipmapKernel = HiZComputeShader.FindKernel("GenerateMaxMipmap");;
+            _computeVisibilityKernel = HiZComputeShader.FindKernel("ComputeVisibility");;
+        }
         
+        public override void Cull(Matrix4x4[] matrices = null, ComputeBuffer cullResultBuffer = null)
+        {
+        
+        }
     }
 }
