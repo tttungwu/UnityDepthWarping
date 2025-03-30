@@ -197,9 +197,6 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
     int index = id.x;
     if (index >= ObjectNum) return;
     
-    // CullResultBuffer.Append(ModelMatrixBuffer[index]);
-    // return;
-    
     // cast AABB to clip space
     float4x4 MVPmatrix = mul(CurrentProjectionViewMatrix, ModelMatrixBuffer[index]);
     float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;

@@ -1,14 +1,87 @@
+#pragma kernel ConvertDepthToNDC
 #pragma kernel GenerateMaxMipmap
 #pragma kernel ComputeVisibility
+
+// max mipmap kernel
+RWTexture2D<float> PrevMipmapBuffer;
+RWTexture2D<float> CurMipmapBuffer;
+uint MipmapWidth, MipmapHeight;
+
+// compute visibility kernel
+int ObjectNum;
+int Width, Height;
+float4 BoundsMin, BoundsMax;
+float4x4 CurrentProjectionViewMatrix;
+Texture2D<float> MipmapBuffer;
+StructuredBuffer<float4x4> ModelMatrixBuffer;
+AppendStructuredBuffer<float4x4> CullResultBuffer;
+
+// Constant
+static const float FLT_MAX = 3.4028235e+38;
+
+[numthreads(8, 8, 1)]
+void ConvertDepthToNDC(uint3 id : SV_DispatchThreadID)
+{
+    
+}
 
 [numthreads(8, 8, 1)]
 void GenerateMaxMipmap(uint3 id : SV_DispatchThreadID)
 {
-    
+    if (id.x >= MipmapWidth || id.y >= MipmapHeight) return;
+    int srcX = id.x * 2;
+    int srcY = id.y * 2;
+    CurMipmapBuffer[id.xy] = max(max(max(PrevMipmapBuffer[int2(srcX, srcY)], PrevMipmapBuffer[int2(srcX + 1, srcY)]),
+        PrevMipmapBuffer[int2(srcX, srcY + 1)]),
+        PrevMipmapBuffer[int2(srcX + 1, srcY + 1)]);
 }
 
 [numthreads(64, 1, 1)]
 void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
-    
+    int index = id.x;
+    if (index >= ObjectNum) return;
+
+    // cast AABB to clip space
+    float4x4 MVPmatrix = mul(CurrentProjectionViewMatrix, ModelMatrixBuffer[index]);
+    float3 bottomLeft = BoundsMin.xyz, upRight = BoundsMax.xyz;
+    float4 vertices[8];
+    vertices[0] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[1] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, bottomLeft.z, 1.0f));
+    vertices[2] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[3] = mul(MVPmatrix, float4(upRight.x, upRight.y, bottomLeft.z, 1.0f));
+    vertices[4] = mul(MVPmatrix, float4(bottomLeft.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[5] = mul(MVPmatrix, float4(upRight.x, bottomLeft.y, upRight.z, 1.0f));
+    vertices[6] = mul(MVPmatrix, float4(bottomLeft.x, upRight.y, upRight.z, 1.0f));
+    vertices[7] = mul(MVPmatrix, float4(upRight.x, upRight.y, upRight.z, 1.0f));
+    // HiZ
+    float OccludeeMinDepth = 1.0f;
+    float2 LowLeft = float2(1, 1) * FLT_MAX;
+    float2 UpRight = float2(-1, -1) * FLT_MAX;
+    [unroll]
+    for (int i = 0; i < 8; ++ i)
+    {
+        vertices[i] /= vertices[i].w;
+        vertices[i].x = Width * (vertices[i].x + 1.0f) * 0.5f;
+        vertices[i].y = Height * (vertices[i].y + 1.0f) * 0.5f;
+        vertices[i].z = (vertices[i].z + 1.0f) * 0.5f;
+        OccludeeMinDepth = min(OccludeeMinDepth, vertices[i].z);
+        LowLeft = min(LowLeft, vertices[i].xy);
+        UpRight = max(UpRight, vertices[i].xy);
+    }
+    uint2 LowLeftInt = uint2(floor(LowLeft.x), floor(LowLeft.y));
+    uint2 UpRightInt = uint2(ceil(UpRight.x), ceil(UpRight.y));
+    int RectWidth = UpRight.x - LowLeft.x + 1;
+    int RectHeight = UpRight.y - LowLeft.y + 1;
+    int LOD = firstbithigh(min(RectWidth, RectHeight));
+    float ScreenSpaceMaxDepth = 0.0f;
+    int Stride = 1 << LOD;
+    for (uint i = LowLeftInt.x; i <= UpRightInt.x; i += Stride)
+    {
+        for (uint j = LowLeftInt.y; j <= UpRightInt.y; j += Stride)
+        {
+            ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, MipmapBuffer.Load(int3(i / Stride, j / Stride, LOD)));
+        }
+    }
+    if (ScreenSpaceMaxDepth >= OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }
