@@ -11,6 +11,7 @@ namespace Core.IndirectDraw
         
         private DepthSaveFeature _depthSaveFeature;
         private RenderTexture _prevDepthTexture;
+        private RenderTexture _depthTexture;
         
         public ComputeShader HiZComputeShader;
         private int _convertDepthToNDCKernel;
