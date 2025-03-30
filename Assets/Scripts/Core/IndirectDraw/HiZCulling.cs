@@ -8,6 +8,8 @@ namespace Core.IndirectDraw
 {
     public class HiZCulling : CullingMethod
     {
+        [SerializeField] private int skipFrameCount = 5;
+        
         private Camera _camera;
         private float _nearClipPlane, _farClipPlane;
         private Mesh _mesh;
@@ -83,7 +85,20 @@ namespace Core.IndirectDraw
         
         public override void Cull(Matrix4x4[] matrices = null, ComputeBuffer cullResultBuffer = null)
         {
-        
+            if (skipFrameCount > 0) --skipFrameCount;
+            else
+            {
+                if (matrices.Length == 0) return;
+                _prevDepthTexture = _depthSaveFeature.GetDepthTexture();
+                
+                // convert depth to NDC
+                HiZComputeShader.SetTexture(_convertDepthToNDCKernel, PrevMipmapBufferPropertyID, _prevDepthTexture);
+                HiZComputeShader.SetTexture(_convertDepthToNDCKernel, CurMipmapBufferPropertyID, _depthTexture);
+                HiZComputeShader.SetMatrix(ProjectionMatrixShaderPropertyID, _camera.projectionMatrix);
+                HiZComputeShader.SetFloat(FarClipPlaneShaderPropertyID, _farClipPlane);
+                HiZComputeShader.SetFloat(NearClipPlaneShaderPropertyID, _nearClipPlane);
+                HiZComputeShader.Dispatch(_convertDepthToNDCKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
+            }
         }
     }
 }
