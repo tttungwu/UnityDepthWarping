@@ -259,6 +259,11 @@ PrefabInstance:
       propertyPath: leafThreshold
       value: 4
       objectReference: {fileID: 0}
+    - target: {fileID: 571576516610799641, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
+        type: 3}
+      propertyPath: HiZComputeShader
+      value: 
+      objectReference: {fileID: 7200000, guid: 0e1a69d93aea4e05a5e19c2849a4e768, type: 3}
     - target: {fileID: 1051821179479290964, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: m_Name
@@ -294,7 +299,7 @@ PrefabInstance:
         type: 3}
       propertyPath: cullingMethods.Array.data[1]
       value: 
-      objectReference: {fileID: 8787731069568223783}
+      objectReference: {fileID: 5001845619615596649}
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: saveDepthInfo
@@ -368,7 +373,7 @@ PrefabInstance:
     - target: {fileID: 4670508166528101705, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: autoPlay
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4670508166528101705, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
@@ -401,16 +406,16 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 02d30f177cc85be4c9a1f84fc93ae65f, type: 3}
---- !u!114 &8787731069568223783 stripped
+--- !u!114 &5001845619615596649 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
+  m_CorrespondingSourceObject: {fileID: 571576516610799641, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
     type: 3}
   m_PrefabInstance: {fileID: 5001845619615596648}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1825223ecb854a09a4e5b3b2d1fdd5a5, type: 3}
+  m_Script: {fileID: 11500000, guid: 92ea0b9f8b7c46539c92061b8858ea84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807

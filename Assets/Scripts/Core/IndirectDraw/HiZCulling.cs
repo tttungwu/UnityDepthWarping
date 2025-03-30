@@ -9,6 +9,7 @@ namespace Core.IndirectDraw
     public class HiZCulling : CullingMethod
     {
         [SerializeField] private int skipFrameCount = 5;
+        [SerializeField] private bool printCullingInfo = false;
         
         private Camera _camera;
         private float _nearClipPlane, _farClipPlane;
@@ -20,7 +21,7 @@ namespace Core.IndirectDraw
         private ComputeBuffer _matrixBuffer;
 
         private int _MipmapWidth, _MipmapLevel;
-        private int _objectNum;
+        private int _objectNum, _allNum;
         
         public ComputeShader HiZComputeShader;
         private int _convertDepthToNDCKernel;
@@ -51,6 +52,7 @@ namespace Core.IndirectDraw
             _camera.depthTextureMode = DepthTextureMode.Depth;
             _nearClipPlane = cam.nearClipPlane;
             _farClipPlane = cam.farClipPlane;
+            _allNum = matrices.Length;
             var proInfo = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             if (proInfo != null)
@@ -94,6 +96,7 @@ namespace Core.IndirectDraw
             {
                 if (matrices.Length == 0) return;
                 _prevDepthTexture = _depthSaveFeature.GetDepthTexture();
+                Debug.Log(_prevDepthTexture);
                 
                 // convert depth to NDC
                 HiZComputeShader.SetTexture(_convertDepthToNDCKernel, PrevMipmapBufferPropertyID, _prevDepthTexture);
@@ -130,6 +133,18 @@ namespace Core.IndirectDraw
                 HiZComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
                 HiZComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
                 HiZComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+                
+                if (printCullingInfo)
+                {
+                    ComputeBuffer countBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
+                    ComputeBuffer.CopyCount(cullResultBuffer, countBuffer, 0);
+                    uint[] countData = new uint[1];
+                    countBuffer.GetData(countData);
+                    countBuffer.Release();
+                    uint actualCount = countData[0];
+                    Debug.Log($"Culled by VFC: {_allNum - _objectNum}");
+                    Debug.Log($"Culled by WOC: {_objectNum - actualCount}");
+                }
             }
         }
         

@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 2352012830795828717}
   - component: {fileID: 106833904039830557}
   - component: {fileID: 2620534299210855180}
+  - component: {fileID: 571576516610799641}
   - component: {fileID: 7372967866822393001}
   m_Layer: 0
   m_Name: CameraIndirectDraw
@@ -233,12 +234,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1825223ecb854a09a4e5b3b2d1fdd5a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _IDWComputeShader: {fileID: 0}
   skipFrameCount: 5
   seedNum: 8
   maxBoundIter: 3
   maxSearchIter: 3
   threshold: 0.5
+  printCullingInfo: 0
+  saveDepthInfo: 0
+  _IDWComputeShader: {fileID: 0}
+--- !u!114 &571576516610799641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051821179479290964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92ea0b9f8b7c46539c92061b8858ea84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skipFrameCount: 5
+  HiZComputeShader: {fileID: 0}
 --- !u!114 &7372967866822393001
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -29,7 +29,8 @@ void ConvertDepthToNDC(uint3 id : SV_DispatchThreadID)
     uint width, height;
     PrevMipmapBuffer.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
-    CurMipmapBuffer[id.xy] = -ProjectionMatrix[2][2] + ProjectionMatrix[2][3] * (NearClipPlane + PrevMipmapBuffer[id.xy] * (FarClipPlane - NearClipPlane)) / (FarClipPlane * NearClipPlane);
+    float depth = -ProjectionMatrix[2][2] + ProjectionMatrix[2][3] * (NearClipPlane + PrevMipmapBuffer[id.xy] * (FarClipPlane - NearClipPlane)) / (FarClipPlane * NearClipPlane);
+    CurMipmapBuffer[id.xy] = (depth + 1.0f) * 0.5f;
 }
 
 [numthreads(8, 8, 1)]
