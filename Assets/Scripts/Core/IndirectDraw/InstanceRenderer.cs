@@ -112,8 +112,8 @@ namespace Core.IndirectDraw
             {
                 _cullResultBuffer.SetCounterValue(0);
                 OcclussionCulling();
-                // instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
-                // ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
+                instanceData.material.SetBuffer(_instanceMatrixBufferId, _cullResultBuffer);
+                ComputeBuffer.CopyCount(_cullResultBuffer, _argsBuffer, sizeof(uint));
             }
             
             Graphics.DrawMeshInstancedIndirect(
@@ -134,11 +134,11 @@ namespace Core.IndirectDraw
                 cullResultMatrix = cullingMethod.GetVisibleMatrices();
             }
             
-            // test frustum culling
-            cullResultMatrix = cullingMethods[0].GetVisibleMatrices();
-            _args[1] = (uint)cullResultMatrix.Length;
-            _argsBuffer.SetData(_args);
-            _matrixBuffer.SetData(cullResultMatrix);
+            // // test frustum culling
+            // cullResultMatrix = cullingMethods[0].GetVisibleMatrices();
+            // _args[1] = (uint)cullResultMatrix.Length;
+            // _argsBuffer.SetData(_args);
+            // _matrixBuffer.SetData(cullResultMatrix);
         }
 
         void OnDestroy()
