@@ -17,8 +17,10 @@ namespace Core.IndirectDraw
         private DepthSaveFeature _depthSaveFeature;
         private RenderTexture _prevDepthTexture;
         private RenderTexture _depthTexture;
+        private ComputeBuffer _matrixBuffer;
 
         private int _MipmapWidth, _MipmapLevel;
+        private int _objectNum;
         
         public ComputeShader HiZComputeShader;
         private int _convertDepthToNDCKernel;
@@ -39,8 +41,8 @@ namespace Core.IndirectDraw
         private static readonly int BoundsMaxShaderPropertyID = Shader.PropertyToID("BoundsMax");
         private static readonly int CurrentProjectionViewMatrixShaderPropertyID = Shader.PropertyToID("CurrentProjectionViewMatrix");
         private static readonly int MipmapBufferShaderPropertyID = Shader.PropertyToID("MipmapBuffer");
-        private static readonly int ModelMatrixShaderBufferPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
-        private static readonly int CullResultShaderBufferPropertyID = Shader.PropertyToID("CullResultBuffer");
+        private static readonly int ModelMatrixBufferShaderPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
+        private static readonly int CullResultBufferShaderPropertyID = Shader.PropertyToID("CullResultBuffer");
         
         public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
         {
@@ -80,7 +82,9 @@ namespace Core.IndirectDraw
             
             _convertDepthToNDCKernel = HiZComputeShader.FindKernel("ConvertDepthToNDC");
             _maxMipmapKernel = HiZComputeShader.FindKernel("GenerateMaxMipmap");;
-            _computeVisibilityKernel = HiZComputeShader.FindKernel("ComputeVisibility");;
+            _computeVisibilityKernel = HiZComputeShader.FindKernel("ComputeVisibility");
+            
+            _matrixBuffer = new ComputeBuffer(matrices.Length, sizeof(float) * 16);
         }
         
         public override void Cull(Matrix4x4[] matrices = null, ComputeBuffer cullResultBuffer = null)
@@ -112,6 +116,20 @@ namespace Core.IndirectDraw
                     curWidth = nextWidth;
                     curHeight = nextHeight;
                 }
+                // set data
+                _objectNum = matrices.Length;
+                _matrixBuffer.SetData(matrices);
+                // cull object
+                HiZComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
+                HiZComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
+                HiZComputeShader.SetTexture(_computeVisibilityKernel, MipmapBufferShaderPropertyID, _depthTexture);
+                HiZComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                HiZComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
+                HiZComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
+                HiZComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
+                HiZComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
+                HiZComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
+                HiZComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
             }
         }
     }
