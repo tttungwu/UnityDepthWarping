@@ -283,7 +283,7 @@ PrefabInstance:
     - target: {fileID: 2352012830795828717, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: enableCulling
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2352012830795828717, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
@@ -368,7 +368,7 @@ PrefabInstance:
     - target: {fileID: 4670508166528101705, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: autoPlay
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4670508166528101705, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
@@ -384,7 +384,7 @@ PrefabInstance:
     - target: {fileID: 7372967866822393001, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8856328816510147375, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
