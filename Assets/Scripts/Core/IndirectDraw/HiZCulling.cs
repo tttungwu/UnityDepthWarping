@@ -30,17 +30,17 @@ namespace Core.IndirectDraw
         private static readonly int ProjectionMatrixShaderPropertyID = Shader.PropertyToID("ProjectionMatrix");
         private static readonly int PrevMipmapBufferPropertyID = Shader.PropertyToID("PrevMipmapBuffer");
         private static readonly int CurMipmapBufferPropertyID = Shader.PropertyToID("CurMipmapBuffer");
-        private static readonly int MipmapWidthPropertyID = Shader.PropertyToID("MipmapWidth");
-        private static readonly int MipmapHeightPropertyID = Shader.PropertyToID("MipmapHeight");
-        private static readonly int ObjectNumPropertyID = Shader.PropertyToID("ObjectNum");
-        private static readonly int WidthPropertyID = Shader.PropertyToID("Width");
-        private static readonly int HeightPropertyID = Shader.PropertyToID("Height");
-        private static readonly int BoundsMinPropertyID = Shader.PropertyToID("BoundsMin");
-        private static readonly int BoundsMaxPropertyID = Shader.PropertyToID("BoundsMax");
-        private static readonly int CurrentProjectionViewMatrixPropertyID = Shader.PropertyToID("CurrentProjectionViewMatrix");
-        private static readonly int MipmapBufferPropertyID = Shader.PropertyToID("MipmapBuffer");
-        private static readonly int ModelMatrixBufferPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
-        private static readonly int CullResultBufferPropertyID = Shader.PropertyToID("CullResultBuffer");
+        private static readonly int MipmapWidthShaderPropertyID = Shader.PropertyToID("MipmapWidth");
+        private static readonly int MipmapHeightShaderPropertyID = Shader.PropertyToID("MipmapHeight");
+        private static readonly int ObjectNumShaderPropertyID = Shader.PropertyToID("ObjectNum");
+        private static readonly int WidthShaderPropertyID = Shader.PropertyToID("Width");
+        private static readonly int HeightShaderPropertyID = Shader.PropertyToID("Height");
+        private static readonly int BoundsMinShaderPropertyID = Shader.PropertyToID("BoundsMin");
+        private static readonly int BoundsMaxShaderPropertyID = Shader.PropertyToID("BoundsMax");
+        private static readonly int CurrentProjectionViewMatrixShaderPropertyID = Shader.PropertyToID("CurrentProjectionViewMatrix");
+        private static readonly int MipmapBufferShaderPropertyID = Shader.PropertyToID("MipmapBuffer");
+        private static readonly int ModelMatrixShaderBufferPropertyID = Shader.PropertyToID("ModelMatrixBuffer");
+        private static readonly int CullResultShaderBufferPropertyID = Shader.PropertyToID("CullResultBuffer");
         
         public override void Init(Camera cam, Mesh mesh, Matrix4x4[] matrices)
         {
@@ -98,6 +98,20 @@ namespace Core.IndirectDraw
                 HiZComputeShader.SetFloat(FarClipPlaneShaderPropertyID, _farClipPlane);
                 HiZComputeShader.SetFloat(NearClipPlaneShaderPropertyID, _nearClipPlane);
                 HiZComputeShader.Dispatch(_convertDepthToNDCKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
+                
+                // generate max mipmap
+                for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < _MipmapLevel; ++layer)
+                {
+                    int nextWidth = (1 + curWidth) / 2;
+                    int nextHeight = (1 + curHeight) / 2;
+                    HiZComputeShader.SetTexture(_maxMipmapKernel, PrevMipmapBufferPropertyID, _depthTexture, layer);
+                    HiZComputeShader.SetTexture(_maxMipmapKernel, CurMipmapBufferPropertyID, _depthTexture, layer + 1);
+                    HiZComputeShader.SetInt(MipmapWidthShaderPropertyID, nextWidth);
+                    HiZComputeShader.SetInt(MipmapHeightShaderPropertyID, nextHeight);
+                    HiZComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
+                    curWidth = nextWidth;
+                    curHeight = nextHeight;
+                }
             }
         }
     }
