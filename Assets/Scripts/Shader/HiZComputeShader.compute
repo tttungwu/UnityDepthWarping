@@ -3,6 +3,7 @@
 #pragma kernel ComputeVisibility
 
 // convert depth to NDC
+Texture2D<float> DepthTexture;
 float FarClipPlane, NearClipPlane;
 float4x4 ProjectionMatrix;
 
@@ -27,9 +28,9 @@ static const float FLT_MAX = 3.4028235e+38;
 void ConvertDepthToNDC(uint3 id : SV_DispatchThreadID)
 {
     uint width, height;
-    PrevMipmapBuffer.GetDimensions(width, height);
+    DepthTexture.GetDimensions(width, height);
     if (id.x >= width || id.y >= height) return;
-    float depth = -ProjectionMatrix[2][2] + ProjectionMatrix[2][3] * (NearClipPlane + PrevMipmapBuffer[id.xy] * (FarClipPlane - NearClipPlane)) / (FarClipPlane * NearClipPlane);
+    float depth = -ProjectionMatrix[2][2] + ProjectionMatrix[2][3] * (NearClipPlane + DepthTexture[id.xy] * (FarClipPlane - NearClipPlane)) / (FarClipPlane * NearClipPlane);
     CurMipmapBuffer[id.xy] = (depth + 1.0f) * 0.5f;
 }
 

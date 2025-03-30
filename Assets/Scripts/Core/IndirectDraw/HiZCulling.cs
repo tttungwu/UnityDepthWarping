@@ -31,6 +31,7 @@ namespace Core.IndirectDraw
         private static readonly int FarClipPlaneShaderPropertyID = Shader.PropertyToID("FarClipPlane");
         private static readonly int NearClipPlaneShaderPropertyID = Shader.PropertyToID("NearClipPlane");
         private static readonly int ProjectionMatrixShaderPropertyID = Shader.PropertyToID("ProjectionMatrix");
+        private static readonly int DepthTextureShaderPropertyID = Shader.PropertyToID("DepthTexture");
         private static readonly int PrevMipmapBufferPropertyID = Shader.PropertyToID("PrevMipmapBuffer");
         private static readonly int CurMipmapBufferPropertyID = Shader.PropertyToID("CurMipmapBuffer");
         private static readonly int MipmapWidthShaderPropertyID = Shader.PropertyToID("MipmapWidth");
@@ -96,55 +97,54 @@ namespace Core.IndirectDraw
             {
                 if (matrices.Length == 0) return;
                 _prevDepthTexture = _depthSaveFeature.GetDepthTexture();
-                Debug.Log(_prevDepthTexture);
                 
                 // convert depth to NDC
-                HiZComputeShader.SetTexture(_convertDepthToNDCKernel, PrevMipmapBufferPropertyID, _prevDepthTexture);
+                HiZComputeShader.SetTexture(_convertDepthToNDCKernel, DepthTextureShaderPropertyID, _prevDepthTexture);
                 HiZComputeShader.SetTexture(_convertDepthToNDCKernel, CurMipmapBufferPropertyID, _depthTexture);
                 HiZComputeShader.SetMatrix(ProjectionMatrixShaderPropertyID, _camera.projectionMatrix);
                 HiZComputeShader.SetFloat(FarClipPlaneShaderPropertyID, _farClipPlane);
                 HiZComputeShader.SetFloat(NearClipPlaneShaderPropertyID, _nearClipPlane);
                 HiZComputeShader.Dispatch(_convertDepthToNDCKernel, (Screen.width + 7) / 8, (Screen.height + 7) / 8, 1);
                 
-                // generate max mipmap
-                for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < _MipmapLevel; ++layer)
-                {
-                    int nextWidth = (1 + curWidth) / 2;
-                    int nextHeight = (1 + curHeight) / 2;
-                    HiZComputeShader.SetTexture(_maxMipmapKernel, PrevMipmapBufferPropertyID, _depthTexture, layer);
-                    HiZComputeShader.SetTexture(_maxMipmapKernel, CurMipmapBufferPropertyID, _depthTexture, layer + 1);
-                    HiZComputeShader.SetInt(MipmapWidthShaderPropertyID, nextWidth);
-                    HiZComputeShader.SetInt(MipmapHeightShaderPropertyID, nextHeight);
-                    HiZComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
-                    curWidth = nextWidth;
-                    curHeight = nextHeight;
-                }
-                // set data
-                _objectNum = matrices.Length;
-                _matrixBuffer.SetData(matrices);
-                // cull object
-                HiZComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
-                HiZComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
-                HiZComputeShader.SetTexture(_computeVisibilityKernel, MipmapBufferShaderPropertyID, _depthTexture);
-                HiZComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
-                HiZComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
-                HiZComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
-                HiZComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
-                HiZComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
-                HiZComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
-                HiZComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
-                
-                if (printCullingInfo)
-                {
-                    ComputeBuffer countBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
-                    ComputeBuffer.CopyCount(cullResultBuffer, countBuffer, 0);
-                    uint[] countData = new uint[1];
-                    countBuffer.GetData(countData);
-                    countBuffer.Release();
-                    uint actualCount = countData[0];
-                    Debug.Log($"Culled by VFC: {_allNum - _objectNum}");
-                    Debug.Log($"Culled by WOC: {_objectNum - actualCount}");
-                }
+                // // generate max mipmap
+                // for (int layer = 0, curWidth = Screen.width, curHeight = Screen.height; layer < _MipmapLevel; ++layer)
+                // {
+                //     int nextWidth = (1 + curWidth) / 2;
+                //     int nextHeight = (1 + curHeight) / 2;
+                //     HiZComputeShader.SetTexture(_maxMipmapKernel, PrevMipmapBufferPropertyID, _depthTexture, layer);
+                //     HiZComputeShader.SetTexture(_maxMipmapKernel, CurMipmapBufferPropertyID, _depthTexture, layer + 1);
+                //     HiZComputeShader.SetInt(MipmapWidthShaderPropertyID, nextWidth);
+                //     HiZComputeShader.SetInt(MipmapHeightShaderPropertyID, nextHeight);
+                //     HiZComputeShader.Dispatch(_maxMipmapKernel, (nextWidth + 7) / 8, (nextHeight + 7) / 8, 1);
+                //     curWidth = nextWidth;
+                //     curHeight = nextHeight;
+                // }
+                // // set data
+                // _objectNum = matrices.Length;
+                // _matrixBuffer.SetData(matrices);
+                // // cull object
+                // HiZComputeShader.SetBuffer(_computeVisibilityKernel, CullResultBufferShaderPropertyID, cullResultBuffer);
+                // HiZComputeShader.SetBuffer(_computeVisibilityKernel, ModelMatrixBufferShaderPropertyID, _matrixBuffer);
+                // HiZComputeShader.SetTexture(_computeVisibilityKernel, MipmapBufferShaderPropertyID, _depthTexture);
+                // HiZComputeShader.SetMatrix(CurrentProjectionViewMatrixShaderPropertyID, _camera.projectionMatrix * _camera.worldToCameraMatrix);
+                // HiZComputeShader.SetInt(ObjectNumShaderPropertyID, _objectNum);
+                // HiZComputeShader.SetVector(BoundsMaxShaderPropertyID, _mesh.bounds.max);
+                // HiZComputeShader.SetVector(BoundsMinShaderPropertyID, _mesh.bounds.min);
+                // HiZComputeShader.SetInt(WidthShaderPropertyID, Screen.width);
+                // HiZComputeShader.SetInt(HeightShaderPropertyID, Screen.height);
+                // HiZComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
+                //
+                // if (printCullingInfo)
+                // {
+                //     ComputeBuffer countBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.IndirectArguments);
+                //     ComputeBuffer.CopyCount(cullResultBuffer, countBuffer, 0);
+                //     uint[] countData = new uint[1];
+                //     countBuffer.GetData(countData);
+                //     countBuffer.Release();
+                //     uint actualCount = countData[0];
+                //     Debug.Log($"Culled by VFC: {_allNum - _objectNum}");
+                //     Debug.Log($"Culled by WOC: {_objectNum - actualCount}");
+                // }
             }
         }
         
