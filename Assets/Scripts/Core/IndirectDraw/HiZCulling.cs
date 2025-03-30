@@ -132,5 +132,11 @@ namespace Core.IndirectDraw
                 HiZComputeShader.Dispatch(_computeVisibilityKernel, (_objectNum + 63) / 64, 1, 1);
             }
         }
+        
+        void OnDestroy()
+        {
+            _matrixBuffer?.Release();
+            _matrixBuffer = null;
+        }
     }
 }
