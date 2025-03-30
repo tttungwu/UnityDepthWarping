@@ -78,3 +78,6 @@ crashlytics-build.properties
 
 # Scene
 /Assets/Scenes/
+
+#Record
+/Assets/Record/

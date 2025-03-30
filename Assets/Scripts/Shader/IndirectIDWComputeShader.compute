@@ -240,5 +240,5 @@ void ComputeVisibility(uint3 id : SV_DispatchThreadID)
             ScreenSpaceMaxDepth = max(ScreenSpaceMaxDepth, YMapMipmapBuffer.Load(int3(i / Stride, j / Stride, LOD)));
         }
     }
-    if (ScreenSpaceMaxDepth > OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
+    if (ScreenSpaceMaxDepth >= OccludeeMinDepth) CullResultBuffer.Append(ModelMatrixBuffer[index]);
 }
