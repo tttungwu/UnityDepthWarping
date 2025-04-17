@@ -265,5 +265,5 @@ void compute_visibility(uint3 id : SV_DispatchThreadID)
             screen_space_max_depth = max(screen_space_max_depth, yMap_mipmap_buffer.Load(int3(i / stride, j / stride, lod)));
         }
     }
-    if (screen_space_max_depth >= occludee_min_depth) cull_result_buffer.Append(model_matrix_buffer[index]);
+    if (screen_space_max_depth >= occludee_min_depth) cull_result_buffer.Append(model_matrix);
 }
