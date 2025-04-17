@@ -1,0 +1,58 @@
+#pragma kernel compute_visibility
+
+int object_num;
+float4 bounds_min, bounds_max;
+float4x4 current_projection_view_matrix;
+StructuredBuffer<float4x4> model_matrix_buffer;
+AppendStructuredBuffer<float4x4> cull_result_buffer;
+
+// constant
+static const float eps = 1e-7;
+static const float4 frustum_planes[6] = {
+    float4( 1,  0,  0,  1),   //  Left   :  x + w < 0
+    float4(-1,  0,  0,  1),   //  Right  : -x + w < 0
+    float4( 0,  1,  0,  1),   //  Bottom :  y + w < 0
+    float4( 0, -1,  0,  1),   //  Top    : -y + w < 0
+    float4( 0,  0,  1,  0),   //  Near   :  z     < 0
+    float4( 0,  0, -1,  1)    //  Far    : -z + w < 0
+};
+
+[numthreads(64, 1, 1)]
+void compute_visibility (uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x;
+    if (index >= object_num) return;
+
+    // cast AABB to clip space
+    float4x4 model_matrix = model_matrix_buffer[index];
+    float4x4 projection_view_model_matrix = mul(current_projection_view_matrix, model_matrix);
+    float4 corners[8];
+    corners[0] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_min.y, bounds_min.z, 1.0f));
+    corners[1] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_min.y, bounds_min.z, 1.0f));
+    corners[2] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_max.y, bounds_min.z, 1.0f));
+    corners[3] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_max.y, bounds_min.z, 1.0f));
+    corners[4] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_min.y, bounds_max.z, 1.0f));
+    corners[5] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_min.y, bounds_max.z, 1.0f));
+    corners[6] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_max.y, bounds_max.z, 1.0f));
+    corners[7] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_max.y, bounds_max.z, 1.0f));
+
+    bool is_outside = false;
+    for (int p = 0; p < 6; ++ p)
+    {
+        bool outside_plane = true;
+        for (int v = 0; v < 8; ++ v) 
+        {
+            if (dot(frustum_planes[p], corners[v]) > 0) 
+            {
+                outside_plane = false;
+                break;
+            }
+        }
+        if (outside_plane) 
+        {
+            is_outside = true;
+            break;
+        }
+    }
+    if (!is_outside) cull_result_buffer.Append(model_matrix);
+}
