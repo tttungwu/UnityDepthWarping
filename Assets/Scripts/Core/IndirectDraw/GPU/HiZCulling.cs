@@ -8,8 +8,8 @@ namespace Core.IndirectDraw.GPU
     public class HiZCulling : CullingMethod
     {
         [SerializeField] private ComputeShader hizCullingShader;
-        [SerializeField] private int skipFrameCount = 5;
-        [SerializeField] private bool printCullingInfo = false;
+        [SerializeField] private int skipFrameCount = 1;
+        [SerializeField] private bool printCullingInfo;
         
         private Camera _camera;
         private Mesh _mesh;
@@ -61,7 +61,7 @@ namespace Core.IndirectDraw.GPU
             _matrixBuffer.SetData(matrices);
             
             _convertDepthToNDCKernel = hizCullingShader.FindKernel("convert_depth_to_ndc");
-            _maxMipmapKernel = hizCullingShader.FindKernel("generate_max_mipmap");;
+            _maxMipmapKernel = hizCullingShader.FindKernel("generate_max_mipmap");
             _computeVisibilityKernel = hizCullingShader.FindKernel("compute_visibility");
             
             var proInfo = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",

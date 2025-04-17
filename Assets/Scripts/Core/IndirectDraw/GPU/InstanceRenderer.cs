@@ -4,7 +4,7 @@ namespace Core.IndirectDraw.GPU
 {
     public class InstanceRenderer : MonoBehaviour
     {
-        [SerializeField] private Camera camera;
+        [SerializeField] private Camera cam;
         [SerializeField] private InstanceDataAsset instanceData;
         [SerializeField] private bool enableCulling = true;
         [SerializeField] private CullingMethod cullingMethod;
@@ -12,7 +12,7 @@ namespace Core.IndirectDraw.GPU
         private ComputeBuffer _argsBuffer;
         private ComputeBuffer _matrixBuffer;
         private ComputeBuffer _cullResultBuffer;
-        private uint[] _args = new uint[5] { 0, 0, 0, 0, 0 };
+        private uint[] _args = new uint[] { 0, 0, 0, 0, 0 };
 
         private Bounds _renderBounds;
 
@@ -67,7 +67,7 @@ namespace Core.IndirectDraw.GPU
             Vector3 min = localBounds.min;
             Vector3 max = localBounds.max;
 
-            Vector3[] localCorners = new Vector3[8]
+            Vector3[] localCorners = new Vector3[]
             {
                 new Vector3(min.x, min.y, min.z),
                 new Vector3(min.x, min.y, max.z),
@@ -98,7 +98,7 @@ namespace Core.IndirectDraw.GPU
 
         void InitializeCullingMethods()
         {
-            cullingMethod.Init(camera, instanceData.mesh, instanceData.matrices);
+            cullingMethod.Init(cam, instanceData.mesh, instanceData.matrices);
         }
         
         void Update()

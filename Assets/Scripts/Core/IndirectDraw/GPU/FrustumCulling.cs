@@ -5,7 +5,7 @@ namespace Core.IndirectDraw.GPU
     public class FrustumCulling : CullingMethod
     {
         [SerializeField] private ComputeShader frustumCullingShader;
-        [SerializeField] private bool printCullingInfo = false;
+        [SerializeField] private bool printCullingInfo;
 
         private Camera _camera;
         private Mesh _mesh;
