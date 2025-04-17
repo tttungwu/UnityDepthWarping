@@ -454,7 +454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hizCullingShader: {fileID: 7200000, guid: 4f6429999f26288409d3076a1935f71a, type: 3}
-  skipFrameCount: 5
+  skipFrameCount: 1
   printCullingInfo: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
