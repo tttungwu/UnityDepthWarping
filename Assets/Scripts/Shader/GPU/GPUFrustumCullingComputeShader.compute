@@ -7,7 +7,6 @@ StructuredBuffer<float4x4> model_matrix_buffer;
 AppendStructuredBuffer<float4x4> cull_result_buffer;
 
 // constant
-static const float eps = 1e-7;
 static const float4 frustum_planes[6] = {
     float4( 1,  0,  0,  1),   //  Left   :  x + w < 0
     float4(-1,  0,  0,  1),   //  Right  : -x + w < 0

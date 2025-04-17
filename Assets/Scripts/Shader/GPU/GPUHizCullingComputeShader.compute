@@ -1,0 +1,124 @@
+#pragma kernel convert_depth_to_ndc
+#pragma kernel generate_max_mipmap
+#pragma kernel compute_visibility
+
+// convert depth to NDC
+Texture2D<float> depth_texture;
+float far_clip_plane, near_clip_plane;
+float4x4 projection_matrix;
+
+// max mipmap kernel
+RWTexture2D<float> prev_mipmap_buffer;
+RWTexture2D<float> cur_mipmap_buffer;
+uint mipmap_width, mipmap_height;
+
+// compute visibility kernel
+int object_num;
+int screen_width, screen_height;
+float4 bounds_min, bounds_max;
+float4x4 current_projection_view_matrix;
+Texture2D<float> mipmap_buffer;
+StructuredBuffer<float4x4> model_matrix_buffer;
+AppendStructuredBuffer<float4x4> cull_result_buffer;
+
+// Constant
+static const float FLT_MAX = 3.4028235e+38;
+static const float4 frustum_planes[6] = {
+    float4( 1,  0,  0,  1),   //  Left   :  x + w < 0
+    float4(-1,  0,  0,  1),   //  Right  : -x + w < 0
+    float4( 0,  1,  0,  1),   //  Bottom :  y + w < 0
+    float4( 0, -1,  0,  1),   //  Top    : -y + w < 0
+    float4( 0,  0,  1,  0),   //  Near   :  z     < 0
+    float4( 0,  0, -1,  1)    //  Far    : -z + w < 0
+};
+
+[numthreads(8, 8, 1)]
+void convert_depth_to_ndc(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    depth_texture.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height) return;
+    float depth = -projection_matrix[2][2] + projection_matrix[2][3] * (near_clip_plane + depth_texture[id.xy] * (far_clip_plane - near_clip_plane)) / (far_clip_plane * near_clip_plane);
+    cur_mipmap_buffer[id.xy] = (depth + 1.0f) * 0.5f;
+}
+
+[numthreads(8, 8, 1)]
+void generate_max_mipmap(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= mipmap_width || id.y >= mipmap_height) return;
+    int src_x = id.x * 2;
+    int src_y = id.y * 2;
+    cur_mipmap_buffer[id.xy] = max(max(max(prev_mipmap_buffer[int2(src_x, src_y)], prev_mipmap_buffer[int2(src_x + 1, src_y)]),
+        prev_mipmap_buffer[int2(src_x, src_y + 1)]),
+        prev_mipmap_buffer[int2(src_x + 1, src_y + 1)]);
+}
+
+[numthreads(64, 1, 1)]
+void compute_visibility(uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x;
+    if (index >= object_num) return;
+
+    // frustum culling
+    float4x4 model_matrix = model_matrix_buffer[index];
+    float4x4 projection_view_model_matrix = mul(current_projection_view_matrix, model_matrix);
+    float4 corners[8];
+    corners[0] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_min.y, bounds_min.z, 1.0f));
+    corners[1] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_min.y, bounds_min.z, 1.0f));
+    corners[2] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_max.y, bounds_min.z, 1.0f));
+    corners[3] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_max.y, bounds_min.z, 1.0f));
+    corners[4] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_min.y, bounds_max.z, 1.0f));
+    corners[5] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_min.y, bounds_max.z, 1.0f));
+    corners[6] = mul(projection_view_model_matrix, float4(bounds_min.x, bounds_max.y, bounds_max.z, 1.0f));
+    corners[7] = mul(projection_view_model_matrix, float4(bounds_max.x, bounds_max.y, bounds_max.z, 1.0f));
+    bool is_outside = false;
+    for (int p = 0; p < 6; ++ p)
+    {
+        bool outside_plane = true;
+        for (int v = 0; v < 8; ++ v) 
+        {
+            if (dot(frustum_planes[p], corners[v]) > 0) 
+            {
+                outside_plane = false;
+                break;
+            }
+        }
+        if (outside_plane) 
+        {
+            is_outside = true;
+            break;
+        }
+    }
+    if (is_outside) return;
+    
+    // HiZ
+    float occludee_min_depth = 1.0f;
+    float2 low_left = float2(1, 1) * FLT_MAX;
+    float2 up_right = float2(-1, -1) * FLT_MAX;
+    [unroll]
+    for (int i = 0; i < 8; ++ i)
+    {
+        corners[i] /= corners[i].w;
+        corners[i].x = screen_width * (corners[i].x + 1.0f) * 0.5f;
+        corners[i].y = screen_height * (corners[i].y + 1.0f) * 0.5f;
+        corners[i].z = (corners[i].z + 1.0f) * 0.5f;
+        occludee_min_depth = min(occludee_min_depth, corners[i].z);
+        low_left = min(low_left, corners[i].xy);
+        up_right = max(up_right, corners[i].xy);
+    }
+    uint2 low_left_int = uint2(floor(low_left.x), floor(low_left.y));
+    uint2 up_right_int = uint2(ceil(up_right.x), ceil(up_right.y));
+    int rect_width = up_right.x - low_left.x + 1;
+    int rect_height = up_right.y - low_left.y + 1;
+    int lod = firstbithigh(min(rect_width, rect_height));
+    float screen_space_max_depth = 0.0f;
+    int stride = 1 << lod;
+    for (uint i = low_left_int.x; i <= up_right_int.x; i += stride)
+    {
+        for (uint j = low_left_int.y; j <= up_right_int.y; j += stride)
+        {
+            screen_space_max_depth = max(screen_space_max_depth, mipmap_buffer.Load(int3(i / stride, j / stride, lod)));
+        }
+    }
+    if (screen_space_max_depth >= occludee_min_depth) cull_result_buffer.Append(model_matrix);
+}

@@ -293,7 +293,7 @@ PrefabInstance:
     - target: {fileID: 2352012830795828717, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: enableCulling
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2352012830795828717, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
@@ -304,7 +304,7 @@ PrefabInstance:
         type: 3}
       propertyPath: cullingMethods.Array.data[1]
       value: 
-      objectReference: {fileID: 8787731069568223783}
+      objectReference: {fileID: 5001845619615596651}
     - target: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
         type: 3}
       propertyPath: saveDepthInfo
@@ -411,7 +411,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 02d30f177cc85be4c9a1f84fc93ae65f, type: 3}
---- !u!114 &8787731069568223783 stripped
+--- !u!114 &5001845619615596651 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2620534299210855180, guid: 02d30f177cc85be4c9a1f84fc93ae65f,
     type: 3}

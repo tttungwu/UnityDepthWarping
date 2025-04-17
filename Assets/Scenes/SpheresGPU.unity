@@ -248,6 +248,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1075223215269191821, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1075223215269191821, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1075223215269191821, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1075223215269191821, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1563150390430416143, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -327,6 +347,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 683637487674546477}
+    - targetCorrespondingSourceObject: {fileID: 2478267288709992119, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 683637487674546482}
   m_SourcePrefab: {fileID: 100100000, guid: 6bbbe8aa5947af243ac5b130da0bd47e, type: 3}
 --- !u!1 &683637487674546472 stripped
 GameObject:
@@ -366,7 +390,7 @@ MonoBehaviour:
   roamingPathAsset: {fileID: 11400000, guid: 9e355aad40686aa42954042ddb10232f, type: 2}
   frameId: -1
   framePlayerSubscribers: []
-  autoPlay: 0
+  autoPlay: 1
 --- !u!114 &683637487674546475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -416,7 +440,22 @@ MonoBehaviour:
   camera: {fileID: 683637487674546476}
   instanceData: {fileID: 11400000, guid: 392941afe0e7c744ca1048aa1a3daa4e, type: 2}
   enableCulling: 1
-  cullingMethod: {fileID: 683637487674546477}
+  cullingMethod: {fileID: 683637487674546482}
+--- !u!114 &683637487674546482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 683637487674546472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de8006e771ca45bcae1c7929e1b530bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hizCullingShader: {fileID: 7200000, guid: 4f6429999f26288409d3076a1935f71a, type: 3}
+  skipFrameCount: 5
+  printCullingInfo: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
