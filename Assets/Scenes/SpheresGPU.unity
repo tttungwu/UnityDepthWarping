@@ -135,6 +135,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 3601034553243868501, guid: 65e1b67e7fbf109499535aa62e4d4225,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6408730456847959228, guid: 65e1b67e7fbf109499535aa62e4d4225,
         type: 3}
       propertyPath: m_Pivot.x
@@ -424,7 +429,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   frustumCullingShader: {fileID: 7200000, guid: 103fa78221572354c929ecaf3cf5d886,
     type: 3}
-  printCullingInfo: 1
+  printCullingInfo: 0
 --- !u!114 &683637487674546478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -439,8 +444,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camera: {fileID: 683637487674546476}
   instanceData: {fileID: 11400000, guid: 392941afe0e7c744ca1048aa1a3daa4e, type: 2}
-  enableCulling: 1
-  cullingMethod: {fileID: 683637487674546482}
+  enableCulling: 0
+  cullingMethod: {fileID: 683637487674546477}
 --- !u!114 &683637487674546482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -455,7 +460,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hizCullingShader: {fileID: 7200000, guid: 4f6429999f26288409d3076a1935f71a, type: 3}
   skipFrameCount: 1
-  printCullingInfo: 1
+  printCullingInfo: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
