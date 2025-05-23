@@ -360,6 +360,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 683637487674546486}
+    - targetCorrespondingSourceObject: {fileID: 2478267288709992119, guid: 6bbbe8aa5947af243ac5b130da0bd47e,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 683637487674546487}
   m_SourcePrefab: {fileID: 100100000, guid: 6bbbe8aa5947af243ac5b130da0bd47e, type: 3}
 --- !u!1 &683637487674546472 stripped
 GameObject:
@@ -399,7 +403,7 @@ MonoBehaviour:
   roamingPathAsset: {fileID: 11400000, guid: 9e355aad40686aa42954042ddb10232f, type: 2}
   frameId: -1
   framePlayerSubscribers: []
-  autoPlay: 1
+  autoPlay: 0
 --- !u!114 &683637487674546475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -433,7 +437,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   frustumCullingShader: {fileID: 7200000, guid: 103fa78221572354c929ecaf3cf5d886,
     type: 3}
-  printCullingInfo: 1
+  printCullingInfo: 0
 --- !u!114 &683637487674546478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,7 +453,7 @@ MonoBehaviour:
   cam: {fileID: 683637487674546476}
   instanceData: {fileID: 11400000, guid: 392941afe0e7c744ca1048aa1a3daa4e, type: 2}
   enableCulling: 1
-  cullingMethod: {fileID: 683637487674546486}
+  cullingMethod: {fileID: 683637487674546482}
 --- !u!114 &683637487674546482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -479,12 +483,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   idwCullingShader: {fileID: 7200000, guid: 0d36c233acab8af4aa89a49b106b5238, type: 3}
   skipFrameCount: 1
-  seedNum: 8
+  seedNum: 4
   maxBoundIter: 3
   maxSearchIter: 3
   threshold: 0.5
-  printCullingInfo: 1
+  printCullingInfo: 0
   saveDepthInfo: 0
+--- !u!114 &683637487674546487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 683637487674546472}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e7f07421ee74ff2a2b2a781db4ef216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  captureType: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
